@@ -275,7 +275,7 @@ a {
 }
 
 .filtros {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto auto;
   align-items: end;
   padding: 14px;
   margin-bottom: 18px;
@@ -471,7 +471,7 @@ textarea:focus {
 
 .fila-reporte {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr .8fr;
+  grid-template-columns: 1.3fr 1fr 1fr .7fr .8fr;
   gap: 14px;
   padding: 14px;
   align-items: center;

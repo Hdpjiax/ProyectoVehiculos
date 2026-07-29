@@ -79,7 +79,8 @@
         <form id="filtroVehiculos" class="filtros">
           <label>Marca<input name="marca" placeholder="Ej. Nissan"></label>
           <label>Modelo<input name="modelo" type="number" placeholder="2020"></label>
-          <label>Precio maximo<input name="precioMax" type="number" min="0" placeholder="250000"></label>
+          <label>Precio desde<input name="precioMin" type="number" min="0" placeholder="100000"></label>
+          <label>Precio hasta<input name="precioMax" type="number" min="0" placeholder="250000"></label>
           <label>Fecha<input name="fecha" type="date"></label>
           <button class="boton" type="submit">Buscar</button>
           <button class="enlace" type="reset">Limpiar</button>
@@ -181,6 +182,15 @@
         <div class="titulo-seccion">
           <div>
             <p class="etiqueta">REPORTES</p>
+            <h2>Ofertas activas por fecha</h2>
+          </div>
+        </div>
+        <div id="listaOfertasReporte" class="tabla-lista"></div>
+      </section>
+      <section class="panel">
+        <div class="titulo-seccion">
+          <div>
+            <p class="etiqueta">HISTORIAL</p>
             <h2>Vehiculos vendidos</h2>
           </div>
         </div>

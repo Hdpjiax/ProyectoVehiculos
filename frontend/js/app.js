@@ -30,6 +30,11 @@ function fecha(valor) {
   return valor ? new Date(valor.replace(' ', 'T')).toLocaleDateString('es-MX') : '';
 }
 
+function limpiarFormulario(formulario) {
+  formulario.reset();
+  if (formulario.id) formulario.id.value = '';
+}
+
 function estadoClase(estado) {
   return estado === 'VENDIDO' ? 'estado vendido' : 'estado';
 }
@@ -45,8 +50,6 @@ function opcionesCliente(seleccion = '') {
 }
 
 function actualizarMetricas() {
-  const publicados = vehiculos.filter(v => v.estado === 'PUBLICADO');
-  $('#totalOfertas').textContent = publicados.length;
   $('#totalClientes').textContent = clientes.length;
   $('#totalVendidos').textContent = vendidos.length;
   $('#contadorClientes').textContent = clientes.length;
@@ -71,9 +74,16 @@ async function cargarClientes() {
   document.querySelectorAll('select[name="idVendedor"],select[name="idComprador"]').forEach(s => s.innerHTML = opcionesCliente(s.value));
 }
 
-async function cargarVehiculos(filtros = '') {
-  vehiculos = await api(`/api/vehiculos${filtros}`);
-  const publicados = vehiculos.filter(v => v.estado === 'PUBLICADO');
+async function cargarOfertas(filtros = '') {
+  const publicados = await api(`/api/reportes/ofertas${filtros}`);
+  const filasReporte = publicados.map(v => `
+    <article class="fila-reporte">
+      <div><strong>${escapar(v.marca)} ${escapar(v.linea)} ${v.modelo}</strong><p class="meta">Serie ${escapar(v.numero_serie || '')}</p></div>
+      <div><span class="meta">Vendedor</span><strong>${escapar(v.vendedor || '')}</strong></div>
+      <div><span class="meta">Precio</span><strong>${moneda.format(v.precio_venta)}</strong></div>
+      <div><span class="meta">Fecha</span><strong>${fecha(v.fecha_publicacion)}</strong></div>
+      <div><span class="meta">Estado</span><strong>${escapar(v.estado)}</strong></div>
+    </article>`).join('');
   $('#listaOfertas').innerHTML = publicados.length ? publicados.map(v => `
     <article class="tarjeta">
       <p class="etiqueta">${escapar(v.marca)}</p>
@@ -83,6 +93,13 @@ async function cargarVehiculos(filtros = '') {
       <p>${escapar(v.descripcion)}</p>
       <p class="meta">Publicado: ${fecha(v.fecha_publicacion)}</p>
     </article>`).join('') : '<p class="meta">No se encontraron ofertas.</p>';
+  $('#listaOfertasReporte').innerHTML = filasReporte || '<p class="meta">No hay ofertas activas.</p>';
+  $('#totalOfertas').textContent = publicados.length;
+}
+
+async function cargarVehiculos() {
+  vehiculos = await api('/api/vehiculos');
+  const publicados = vehiculos.filter(v => v.estado === 'PUBLICADO');
   $('#listaVehiculos').innerHTML = vehiculos.length ? vehiculos.map(v => `
     <article class="item">
       <div>
@@ -113,6 +130,7 @@ async function cargarVendidos() {
       <div><strong>${escapar(v.marca)} ${escapar(v.linea)} ${v.modelo}</strong><p class="meta">Serie ${escapar(v.numero_serie || '')}</p></div>
       <div><span class="meta">Vendedor</span><strong>${escapar(v.vendedor)}</strong></div>
       <div><span class="meta">Comprador</span><strong>${escapar(v.comprador)}</strong></div>
+      <div><span class="meta">Fecha</span><strong>${fecha(v.fecha_venta)}</strong></div>
       <div><span class="meta">Total</span><strong>${moneda.format(v.precio_final)}</strong></div>
     </article>`).join('');
   $('#listaVendidosResumen').innerHTML = resumen || '<p class="meta">Aun no hay ventas registradas.</p>';
@@ -147,11 +165,11 @@ function editarVehiculo(id) {
 
 $('#formCliente').addEventListener('submit', async e => {
   e.preventDefault();
-  const f = e.currentTarget, d = valor(f), id = d.id;
+  const f = e.currentTarget, d = valor(f), id = String(d.id || '').trim();
   delete d.id;
   try {
     await api(`/api/clientes${id ? '/' + id : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(d) });
-    f.reset();
+    limpiarFormulario(f);
     await cargarTodo();
     aviso('Cliente guardado correctamente.');
   } catch (x) {
@@ -161,11 +179,11 @@ $('#formCliente').addEventListener('submit', async e => {
 
 $('#formVehiculo').addEventListener('submit', async e => {
   e.preventDefault();
-  const f = e.currentTarget, d = valor(f), id = d.id;
+  const f = e.currentTarget, d = valor(f), id = String(d.id || '').trim();
   delete d.id;
   try {
     await api(`/api/vehiculos${id ? '/' + id : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(d) });
-    f.reset();
+    limpiarFormulario(f);
     await cargarTodo();
     aviso('Vehiculo guardado correctamente.');
   } catch (x) {
@@ -179,7 +197,9 @@ $('#formVenta').addEventListener('submit', async e => {
   try {
     const resultado = await api('/api/ventas', { method: 'POST', body: JSON.stringify(d) });
     $('#acta').hidden = false;
-    $('#acta').innerHTML = `<h3>Acta generada con Java</h3><p>La venta quedo registrada y Java creo el documento usando sus clases POO.</p><a class="boton primario" target="_blank" rel="noopener" href="${resultado.acta}">Abrir e imprimir acta</a>`;
+    $('#acta').innerHTML = resultado.acta
+      ? `<h3>Acta generada con Java</h3><p>La venta quedo registrada y Java creo el documento formal de compraventa.</p><a class="boton primario" target="_blank" rel="noopener" href="${resultado.acta}">Abrir e imprimir acta</a>`
+      : `<h3>Venta registrada</h3><p>${escapar(resultado.mensaje || 'La venta quedo guardada, pero el acta no se genero.')}</p>`;
     e.currentTarget.reset();
     await cargarTodo();
     aviso('Venta registrada.');
@@ -192,10 +212,10 @@ $('#filtroVehiculos').addEventListener('submit', e => {
   e.preventDefault();
   const p = new URLSearchParams(valor(e.currentTarget));
   [...p.entries()].forEach(([k, v]) => !v && p.delete(k));
-  cargarVehiculos(p.toString() ? `?${p}` : '').then(actualizarMetricas).catch(x => aviso(x.message));
+  cargarOfertas(p.toString() ? `?${p}` : '').then(actualizarMetricas).catch(x => aviso(x.message));
 });
 
-$('#filtroVehiculos').addEventListener('reset', () => setTimeout(() => cargarVehiculos().then(actualizarMetricas), 0));
+$('#filtroVehiculos').addEventListener('reset', () => setTimeout(() => cargarOfertas().then(actualizarMetricas), 0));
 
 document.addEventListener('click', async e => {
   const tab = e.target.closest('[data-tab-link]');
@@ -211,7 +231,7 @@ document.addEventListener('click', async e => {
   if (e.target.dataset.borrarVehiculo && confirm('Eliminar vehiculo?')) {
     try { await api(`/api/vehiculos/${idVehiculo}`, { method: 'DELETE' }); await cargarTodo(); } catch (x) { aviso(x.message); }
   }
-  if (e.target.classList.contains('cancelar')) e.target.closest('form').reset();
+  if (e.target.classList.contains('cancelar')) limpiarFormulario(e.target.closest('form'));
 });
 
 window.addEventListener('hashchange', () => cambiarVista(location.hash.replace('#', '') || 'tablero'));
@@ -221,6 +241,7 @@ async function cargarTodo() {
   try {
     await cargarClientes();
     await cargarVehiculos();
+    await cargarOfertas();
     await cargarVendidos();
     actualizarMetricas();
   } catch (x) {
