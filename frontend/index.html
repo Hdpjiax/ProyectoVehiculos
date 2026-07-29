@@ -4,110 +4,192 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MotorCasa | Compra y venta</title>
+  <title>MotorCasa | Agencia de autos</title>
   <link rel="stylesheet" href="css/estilos.css">
 </head>
 
 <body>
-  <header class="encabezado">
-    <a class="marca" href="#inicio">Motor<span>Casa</span></a>
-    <nav aria-label="Navegación principal">
-      <a href="#ofertas">Ofertas</a><a href="#clientes">Clientes</a><a href="#vehiculos">Vehículos</a><a
-        href="#ventas">Ventas</a>
+  <aside class="barra-lateral" aria-label="Navegacion principal">
+    <a class="marca" href="#tablero" data-tab-link="tablero">
+      <span class="marca-icono">MC</span>
+      <span>MotorCasa</span>
+    </a>
+    <nav class="nav-tabs">
+      <a href="#tablero" data-tab-link="tablero">Tablero</a>
+      <a href="#clientes" data-tab-link="clientes">Clientes</a>
+      <a href="#vehiculos" data-tab-link="vehiculos">Vehiculos</a>
+      <a href="#ventas" data-tab-link="ventas">Ventas</a>
+      <a href="#reportes" data-tab-link="reportes">Reportes</a>
     </nav>
-  </header>
-  <main id="inicio">
-    <section class="hero">
+    <div class="panel-mini">
+      <span>Estado del sistema</span>
+      <strong id="estadoConexion">Conectando</strong>
+    </div>
+  </aside>
+
+  <main class="app">
+    <header class="superior">
       <div>
         <p class="etiqueta">AGENCIA DE AUTOS USADOS</p>
-        <h1>Tu próximo vehículo, con información clara.</h1>
-        <p>Administra publicaciones, clientes y ventas desde un solo lugar.</p><a class="boton primario"
-          href="#ofertas">Ver ofertas activas</a>
+        <h1>Gestion de compra y venta de vehiculos</h1>
       </div>
-      <div class="dato"><strong id="totalOfertas">0</strong><span>vehículos disponibles</span></div>
-    </section>
+      <div class="superior-acciones">
+        <a class="boton fantasma" href="#vehiculos" data-tab-link="vehiculos">Nuevo vehiculo</a>
+        <a class="boton primario" href="#ventas" data-tab-link="ventas">Registrar venta</a>
+      </div>
+    </header>
 
-    <section id="ofertas" class="seccion">
-      <div class="titulo-seccion">
+    <section id="tablero" class="vista activa">
+      <div class="metricas">
+        <article class="metrica">
+          <span>Ofertas activas</span>
+          <strong id="totalOfertas">0</strong>
+        </article>
+        <article class="metrica">
+          <span>Clientes</span>
+          <strong id="totalClientes">0</strong>
+        </article>
+        <article class="metrica">
+          <span>Vendidos</span>
+          <strong id="totalVendidos">0</strong>
+        </article>
+      </div>
+
+      <section class="panel hero-operativo">
         <div>
-          <p class="etiqueta">CATÁLOGO</p>
-          <h2>Ofertas activas</h2>
+          <p class="etiqueta">CONTROL COMERCIAL</p>
+          <h2>Inventario claro, ventas trazables y actas listas para imprimir.</h2>
+          <p>Administra clientes, publica vehiculos, filtra ofertas y registra ventas con una interfaz separada por flujo.</p>
         </div>
-      </div>
-      <form id="filtroVehiculos" class="filtros"><label>Marca<input name="marca"
-            placeholder="Ej. Nissan"></label><label>Modelo<input name="modelo" type="number"
-            placeholder="2020"></label><label>Precio máximo<input name="precioMax" type="number" min="0"
-            placeholder="250000"></label><label>Fecha<input name="fecha" type="date"></label><button class="boton"
-          type="submit">Buscar</button><button class="enlace" type="reset">Limpiar</button></form>
-      <div id="listaOfertas" class="tarjetas" aria-live="polite"></div>
-    </section>
+        <div class="placa-auto" aria-hidden="true">
+          <span>AGENCIA</span>
+          <strong>2026</strong>
+          <small>MotorCasa</small>
+        </div>
+      </section>
 
-    <section id="clientes" class="seccion dos-columnas">
-      <div>
-        <p class="etiqueta">REGISTRO</p>
-        <h2>Clientes</h2>
-        <form id="formCliente" class="formulario"><input type="hidden" name="id"><label>Nombre completo<input
-              name="nombreCompleto" required></label><label>Domicilio<input name="domicilio"
-              required></label><label>Correo electrónico<input name="correoElectronico" type="email"
-              required></label><label>Teléfono<input name="telefono" inputmode="tel" required></label>
-          <div><button class="boton primario" type="submit">Guardar cliente</button><button class="enlace cancelar"
-              type="button">Cancelar</button></div>
+      <section class="panel">
+        <div class="titulo-seccion">
+          <div>
+            <p class="etiqueta">CATALOGO</p>
+            <h2>Ofertas activas</h2>
+          </div>
+          <a class="enlace" href="#reportes" data-tab-link="reportes">Ver reportes</a>
+        </div>
+        <form id="filtroVehiculos" class="filtros">
+          <label>Marca<input name="marca" placeholder="Ej. Nissan"></label>
+          <label>Modelo<input name="modelo" type="number" placeholder="2020"></label>
+          <label>Precio maximo<input name="precioMax" type="number" min="0" placeholder="250000"></label>
+          <label>Fecha<input name="fecha" type="date"></label>
+          <button class="boton" type="submit">Buscar</button>
+          <button class="enlace" type="reset">Limpiar</button>
         </form>
-      </div>
-      <div>
-        <h3>Personas registradas</h3>
-        <div id="listaClientes" class="lista"></div>
+        <div id="listaOfertas" class="tarjetas" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section id="clientes" class="vista">
+      <div class="grid-crud">
+        <section class="panel">
+          <p class="etiqueta">REGISTRO</p>
+          <h2>Clientes</h2>
+          <form id="formCliente" class="formulario">
+            <input type="hidden" name="id">
+            <label>Nombre completo<input name="nombreCompleto" required></label>
+            <label>Domicilio<input name="domicilio" required></label>
+            <label>Correo electronico<input name="correoElectronico" type="email" required></label>
+            <label>Telefono<input name="telefono" inputmode="tel" required></label>
+            <div class="acciones-form">
+              <button class="boton primario" type="submit">Guardar cliente</button>
+              <button class="enlace cancelar" type="button">Cancelar</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel">
+          <div class="titulo-seccion compacto">
+            <h2>Personas registradas</h2>
+            <span class="contador" id="contadorClientes">0</span>
+          </div>
+          <div id="listaClientes" class="lista"></div>
+        </section>
       </div>
     </section>
 
-    <section id="vehiculos" class="seccion dos-columnas">
-      <div>
-        <p class="etiqueta">PUBLICACIÓN</p>
-        <h2>Registrar vehículo</h2>
-        <form id="formVehiculo" class="formulario cuadricula"><input type="hidden" name="id"><label>Vendedor<select
-              name="idVendedor" required></select></label><label>Marca<input name="marca"
-              required></label><label>Línea<input name="linea" required></label><label>Modelo<input name="modelo"
-              type="number" min="1900" max="2100" required></label><label>Número de motor<input name="numeroMotor"
-              required></label><label>Número de serie<input name="numeroSerie" required></label><label>Color<input
-              name="color" required></label><label>Transmisión<select name="transmision" required>
-              <option value="">Selecciona</option>
-              <option value="AUTOMATICA">Automática</option>
-              <option value="ESTANDAR">Estándar</option>
-            </select></label><label>Cilindros<input name="numeroCilindros" type="number" min="1"
-              required></label><label>Nacionalidad<input name="nacionalidad" required></label><label>Precio de
-            compra<input name="precioCompra" type="number" min="0" step="0.01" required></label><label>Precio de
-            venta<input name="precioVenta" type="number" min="0.01" step="0.01" required></label><label
-            class="ancho-total">Descripción<textarea name="descripcion" required></textarea></label><label
-            class="ancho-total">Observaciones<textarea name="observaciones"></textarea></label>
-          <div class="ancho-total"><button class="boton primario" type="submit">Publicar vehículo</button><button
-              class="enlace cancelar" type="button">Cancelar</button></div>
-        </form>
-      </div>
-      <div>
-        <h3>Vehículos registrados</h3>
-        <div id="listaVehiculos" class="lista"></div>
+    <section id="vehiculos" class="vista">
+      <div class="grid-crud amplio">
+        <section class="panel">
+          <p class="etiqueta">PUBLICACION</p>
+          <h2>Registrar vehiculo</h2>
+          <form id="formVehiculo" class="formulario cuadricula">
+            <input type="hidden" name="id">
+            <label>Vendedor<select name="idVendedor" required></select></label>
+            <label>Marca<input name="marca" required></label>
+            <label>Linea<input name="linea" required></label>
+            <label>Modelo<input name="modelo" type="number" min="1900" max="2100" required></label>
+            <label>Numero de motor<input name="numeroMotor" required></label>
+            <label>Numero de serie<input name="numeroSerie" required></label>
+            <label>Color<input name="color" required></label>
+            <label>Transmision<select name="transmision" required>
+                <option value="">Selecciona</option>
+                <option value="AUTOMATICA">Automatica</option>
+                <option value="ESTANDAR">Estandar</option>
+              </select></label>
+            <label>Cilindros<input name="numeroCilindros" type="number" min="1" required></label>
+            <label>Nacionalidad<input name="nacionalidad" required></label>
+            <label>Precio de compra<input name="precioCompra" type="number" min="0" step="0.01" required></label>
+            <label>Precio de venta<input name="precioVenta" type="number" min="0.01" step="0.01" required></label>
+            <label class="ancho-total">Descripcion<textarea name="descripcion" required></textarea></label>
+            <label class="ancho-total">Observaciones<textarea name="observaciones"></textarea></label>
+            <div class="acciones-form ancho-total">
+              <button class="boton primario" type="submit">Publicar vehiculo</button>
+              <button class="enlace cancelar" type="button">Cancelar</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel">
+          <div class="titulo-seccion compacto">
+            <h2>Inventario</h2>
+            <span class="contador" id="contadorVehiculos">0</span>
+          </div>
+          <div id="listaVehiculos" class="lista"></div>
+        </section>
       </div>
     </section>
 
-    <section id="ventas" class="seccion dos-columnas">
-      <div>
-        <p class="etiqueta">COMPRAVENTA</p>
-        <h2>Registrar una venta</h2>
-        <form id="formVenta" class="formulario"><label>Vehículo publicado<select name="idVehiculo"
-              required></select></label><label>Comprador<select name="idComprador"
-              required></select></label><label>Precio final<input name="precioFinal" type="number" min="0.01"
-              step="0.01" required></label><button class="boton primario" type="submit">Registrar venta y generar
-            acta</button></form>
-        <div id="acta" class="acta" hidden></div>
+    <section id="ventas" class="vista">
+      <div class="grid-crud">
+        <section class="panel venta-panel">
+          <p class="etiqueta">COMPRAVENTA</p>
+          <h2>Registrar una venta</h2>
+          <form id="formVenta" class="formulario">
+            <label>Vehiculo publicado<select name="idVehiculo" required></select></label>
+            <label>Comprador<select name="idComprador" required></select></label>
+            <label>Precio final<input name="precioFinal" type="number" min="0.01" step="0.01" required></label>
+            <button class="boton primario" type="submit">Registrar venta y generar acta</button>
+          </form>
+          <div id="acta" class="acta" hidden></div>
+        </section>
+        <section class="panel">
+          <h2>Ventas recientes</h2>
+          <div id="listaVendidosResumen" class="lista"></div>
+        </section>
       </div>
-      <div>
-        <h3>Vehículos vendidos</h3>
-        <div id="listaVendidos" class="lista"></div>
-      </div>
+    </section>
+
+    <section id="reportes" class="vista">
+      <section class="panel">
+        <div class="titulo-seccion">
+          <div>
+            <p class="etiqueta">REPORTES</p>
+            <h2>Vehiculos vendidos</h2>
+          </div>
+        </div>
+        <div id="listaVendidos" class="tabla-lista"></div>
+      </section>
     </section>
   </main>
+
   <div id="mensaje" class="mensaje" role="status" aria-live="polite"></div>
-  <footer>Proyecto integrador - Sistema de compra-venta de vehículos</footer>
   <script src="js/app.js"></script>
 </body>
 
