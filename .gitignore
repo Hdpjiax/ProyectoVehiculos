@@ -1,7 +1,8 @@
-target/
-*.class
+java/out/
+actas/*.html
+node_modules/
 .idea/
 *.iml
 .vscode/
 .env
-database/local.properties
+server-js/database.local.js

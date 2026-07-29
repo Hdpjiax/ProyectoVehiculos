@@ -4,28 +4,29 @@ Proyecto escolar para administrar clientes, vehículos publicados y ventas de un
 
 ## Tecnologías
 
-- Java 17 básico: clases, encapsulamiento, constructores, getters y setters.
-- Java `HttpServer` y JDBC, sin Spring ni framework pesado.
+- Java 17 básico: clases, encapsulamiento, constructores, getters y setters. Solo genera el acta de compraventa.
 - HTML, CSS y JavaScript puro (`fetch`) para la interfaz.
-- MySQL 8 y scripts SQL versionados.
+- Node.js (JavaScript) y MySQL 8 para el CRUD, consultas y reportes.
 
 ## Requisitos
 
 - JDK 17.
-- Apache Maven 3.9 o superior.
+- Node.js 20 o superior.
 - MySQL 8.
 
 ## Puesta en marcha
 
 1. Cree la base y las tablas ejecutando, en orden, los archivos de `database/migrations/`.
 2. Opcionalmente cargue ejemplos con `database/seeds/001_datos_demo.sql`.
-3. Copie `backend/src/main/resources/database.properties.example` a `database.properties` y ajuste usuario y contraseña. Este archivo no se versiona.
-4. Desde `backend`, ejecute `mvn compile` y luego `mvn exec:java`.
-5. Abra `http://localhost:8080`.
+3. Copie `server-js/database.config.example.js` como `server-js/database.local.js` y ajuste usuario y contraseña. Este archivo no se versiona.
+4. Compile Java: en Windows ejecute `java\\compilar.bat`; en macOS/Linux ejecute `bash java/compilar.sh`.
+5. Desde `server-js`, ejecute `npm install` y después `npm start`.
+6. Abra `http://localhost:8080`.
 
 ## Estructura
 
-- `backend/`: API Java y acceso JDBC a MySQL.
+- `server-js/`: API JavaScript y acceso a MySQL.
+- `java/`: POO básica y generador de actas. No usa Maven.
 - `frontend/`: interfaz HTML/CSS/JS servida por Java.
 - `database/migrations/`: esquema portable para migrar a otra máquina.
 - `database/seeds/`: datos de demostración.
@@ -38,8 +39,8 @@ Proyecto escolar para administrar clientes, vehículos publicados y ventas de un
 - Búsqueda por modelo, marca, precio y fecha de publicación.
 - Registro de venta, con comprador, vendedor y fecha.
 - Reporte de ofertas activas y de vehículos vendidos.
-- Acta de compraventa imprimible desde el navegador.
+- Acta de compraventa HTML generada por Java e imprimible desde el navegador.
 
 ## Seguridad y buenas prácticas
 
-Las consultas JDBC utilizan `PreparedStatement`; no se colocan contraseñas en el repositorio. JavaScript consulta únicamente la API Java, nunca MySQL directamente.
+Las consultas MySQL usan parámetros; no se colocan contraseñas en el repositorio. El navegador consulta la API JavaScript y Java se dedica a la generación del acta.

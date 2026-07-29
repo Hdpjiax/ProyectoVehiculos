@@ -19,7 +19,7 @@ Una agencia de autos usados necesita centralizar el registro de personas que ofe
 
 - Interfaz responsiva y usable en móvil y computadora.
 - Validaciones de campos obligatorios y de precios positivos.
-- Persistencia en MySQL y consultas JDBC parametrizadas.
+- Persistencia en MySQL y consultas JavaScript parametrizadas.
 - Código Java con POO básica y estructura legible.
 - Scripts SQL reproducibles para migrar a otra máquina.
 
@@ -67,8 +67,8 @@ erDiagram
 classDiagram
   class Cliente { -int idCliente; -String nombreCompleto; -String domicilio; -String correoElectronico; -String telefono; +Cliente(); +getNombreCompleto() String; +setNombreCompleto(String) void }
   class Vehiculo { -int idVehiculo; -int idVendedor; -String marca; -BigDecimal precioVenta; +Vehiculo(); +getMarca() String; +setMarca(String) void }
-  class ConexionMySQL { +obtenerConexion() Connection }
-  class Servidor { +main(String[]) void }
+  class GeneradorActa { +main(String[]) void }
   Cliente "1" --> "0..*" Vehiculo : vende
-  Servidor --> ConexionMySQL
+  GeneradorActa --> Cliente
+  GeneradorActa --> Vehiculo
 ```
