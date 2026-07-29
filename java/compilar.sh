@@ -7,5 +7,5 @@ if ! command -v javac >/dev/null 2>&1; then
 fi
 
 mkdir -p out
-javac -d out src/mx/edu/prepa/autos/Cliente.java src/mx/edu/prepa/autos/Vehiculo.java src/mx/edu/prepa/autos/GeneradorActa.java
+javac -encoding UTF-8 -d out src/mx/edu/prepa/autos/Cliente.java src/mx/edu/prepa/autos/Vehiculo.java src/mx/edu/prepa/autos/GeneradorActa.java
 echo "Java compilado en la carpeta out."

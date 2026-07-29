@@ -6,6 +6,6 @@ if errorlevel 1 (
 )
 
 if not exist out mkdir out
-javac -d out src\mx\edu\prepa\autos\Cliente.java src\mx\edu\prepa\autos\Vehiculo.java src\mx\edu\prepa\autos\GeneradorActa.java
+javac -encoding UTF-8 -d out src\mx\edu\prepa\autos\Cliente.java src\mx\edu\prepa\autos\Vehiculo.java src\mx\edu\prepa\autos\GeneradorActa.java
 if errorlevel 1 exit /b 1
 echo Java compilado en la carpeta out.
