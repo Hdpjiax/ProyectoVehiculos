@@ -137,7 +137,7 @@ function datosActaDesdeFila(fila) {
     domicilioVendedor: fila.domicilio_vendedor, correoVendedor: fila.correo_vendedor,
     telefonoVendedor: fila.telefono_vendedor, comprador: fila.comprador,
     domicilioComprador: fila.domicilio_comprador, correoComprador: fila.correo_comprador,
-    telefonoComprador: fila.telefono_comprador, lugar: 'Ciudad de Mexico'
+      telefonoComprador: fila.telefono_comprador, lugar: 'Morelia, Michoacan.'
   };
 }
 
@@ -231,7 +231,7 @@ async function ventas(req, res, ruta) {
         domicilioVendedor: v.domicilio_vendedor, correoVendedor: v.correo_vendedor, telefonoVendedor: v.telefono_vendedor,
         comprador: comprador.nombre_completo, domicilioComprador: comprador.domicilio,
         correoComprador: comprador.correo_electronico, telefonoComprador: comprador.telefono,
-        lugar: d.lugar || 'Ciudad de Mexico'
+        lugar: d.lugar || 'Morelia, Michoacan.'
       };
       await conexion.commit();
     } catch (error) {
