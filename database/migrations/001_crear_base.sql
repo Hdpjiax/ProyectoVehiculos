@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS vehiculos (
   observaciones TEXT,
   url_imagen VARCHAR(500),
   fecha_publicacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  estado ENUM('PUBLICADO','VENDIDO') NOT NULL DEFAULT 'PUBLICADO',
+  estado ENUM('PUBLICADO','APARTADO','VENDIDO') NOT NULL DEFAULT 'PUBLICADO',
   CONSTRAINT fk_vehiculo_vendedor FOREIGN KEY (id_vendedor) REFERENCES clientes(id_cliente),
   CONSTRAINT chk_precios CHECK (precio_compra >= 0 AND precio_venta > 0),
   CONSTRAINT chk_modelo CHECK (modelo BETWEEN 1900 AND 2100)
@@ -38,11 +38,13 @@ CREATE TABLE IF NOT EXISTS vehiculos (
 
 CREATE TABLE IF NOT EXISTS ventas (
   id_venta INT AUTO_INCREMENT PRIMARY KEY,
-  id_vehiculo INT NOT NULL UNIQUE,
+  id_vehiculo INT NOT NULL,
   id_comprador INT NOT NULL,
+  folio_venta VARCHAR(40) UNIQUE,
   fecha_venta DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   precio_final DECIMAL(12,2) NOT NULL,
   estatus_pago ENUM('PENDIENTE','PAGADO','APARTADO') NOT NULL DEFAULT 'PAGADO',
+  estado_venta ENUM('ACTIVA','CANCELADA') NOT NULL DEFAULT 'ACTIVA',
   ruta_acta VARCHAR(500),
   CONSTRAINT fk_venta_vehiculo FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id_vehiculo),
   CONSTRAINT fk_venta_comprador FOREIGN KEY (id_comprador) REFERENCES clientes(id_cliente),
@@ -55,9 +57,20 @@ CREATE TABLE IF NOT EXISTS abonos_venta (
   fecha_abono DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   monto DECIMAL(12,2) NOT NULL,
   metodo_pago VARCHAR(40) NOT NULL DEFAULT 'EFECTIVO',
+  referencia_pago VARCHAR(80),
   observaciones VARCHAR(255),
   CONSTRAINT fk_abono_venta FOREIGN KEY (id_venta) REFERENCES ventas(id_venta) ON DELETE CASCADE,
   CONSTRAINT chk_abono_monto CHECK (monto > 0)
+);
+
+CREATE TABLE IF NOT EXISTS historial_estados (
+  id_historial INT AUTO_INCREMENT PRIMARY KEY,
+  entidad VARCHAR(40) NOT NULL,
+  id_entidad INT NOT NULL,
+  estado_anterior VARCHAR(40),
+  estado_nuevo VARCHAR(40) NOT NULL,
+  motivo VARCHAR(255),
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 SET @sql := (

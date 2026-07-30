@@ -4,7 +4,7 @@ from html import escape
 
 ROOT = Path(__file__).resolve().parents[1]
 CAPTURAS = ROOT / "docs" / "capturas"
-OUT = ROOT / "output" / "Proyecto_integrador_MotorCasa_v5.docx"
+OUT = ROOT / "output" / "Proyecto_integrador_ADDJ_MOTORS_v5.docx"
 
 
 def svg_capture(path, title, subtitle, blocks, accent="#a51f2b"):
@@ -29,8 +29,8 @@ def svg_capture(path, title, subtitle, blocks, accent="#a51f2b"):
       <rect width="1280" height="760" fill="#f3f4f1"/>
       <rect x="0" y="0" width="260" height="760" fill="url(#side)"/>
       <rect x="24" y="28" width="48" height="48" rx="8" fill="{accent}"/>
-      <text x="39" y="60" font-size="18" font-weight="800" fill="#fff">MC</text>
-      <text x="88" y="58" font-size="24" font-weight="800" fill="#fff">MotorCasa</text>
+      <text x="39" y="60" font-size="18" font-weight="800" fill="#fff">AM</text>
+      <text x="88" y="58" font-size="24" font-weight="800" fill="#fff">ADDJ MOTORS</text>
       <text x="32" y="130" font-size="18" fill="#fff">Tablero</text>
       <text x="32" y="178" font-size="18" fill="#cfd5d8">Clientes</text>
       <text x="32" y="226" font-size="18" fill="#cfd5d8">Vehiculos</text>
@@ -155,7 +155,7 @@ def make_gantt():
       </defs>
       <rect width="1600" height="880" fill="#eef0ec"/>
       <rect x="0" y="0" width="1600" height="118" fill="url(#hero)"/>
-      <text x="54" y="54" font-size="18" font-weight="800" fill="#e7eaec">MOTORCASA</text>
+      <text x="54" y="54" font-size="18" font-weight="800" fill="#e7eaec">ADDJ MOTORS</text>
       <text x="54" y="94" font-size="38" font-weight="900" fill="#ffffff">DIAGRAMA DE GANTT SEMANAL</text>
       <text x="1220" y="52" font-size="15" font-weight="800" fill="#ffffff">Proyecto integrador</text>
       <text x="1220" y="82" font-size="15" fill="#f2d6da">Duracion total: 5 semanas</text>
@@ -163,7 +163,7 @@ def make_gantt():
       <rect x="44" y="138" width="1426" height="635" rx="16" fill="#ffffff" filter="url(#shadow)"/>
       <rect x="44" y="138" width="1426" height="70" rx="16" fill="#ffffff"/>
       <text x="70" y="170" font-size="13" font-weight="800" fill="#66707a">NOMBRE DEL PROYECTO</text>
-      <text x="70" y="197" font-size="20" font-weight="900" fill="#111418">MotorCasa - Sistema de compra-venta de vehiculos</text>
+      <text x="70" y="197" font-size="20" font-weight="900" fill="#111418">ADDJ MOTORS - Sistema de compra-venta de vehiculos</text>
       <text x="620" y="170" font-size="13" font-weight="800" fill="#66707a">RESPONSABLE</text>
       <text x="620" y="197" font-size="18" font-weight="800" fill="#111418">Equipo de desarrollo</text>
       <text x="920" y="170" font-size="13" font-weight="800" fill="#66707a">INICIO</text>
@@ -197,7 +197,7 @@ def make_model_diagrams():
     er_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
       <rect width="1200" height="720" fill="#f6f7f4"/>
       <text x="48" y="58" font-size="30" font-weight="800" fill="#111418">Modelo Entidad-Relacion</text>
-      <text x="48" y="88" font-size="18" fill="#66707a">Agencia de autos usados MotorCasa</text>
+      <text x="48" y="88" font-size="18" fill="#66707a">Agencia de autos usados ADDJ MOTORS</text>
       <g font-family="Arial">
         <rect x="70" y="150" width="290" height="310" rx="10" fill="#ffffff" stroke="#111418" stroke-width="2"/>
         <rect x="70" y="150" width="290" height="54" rx="10" fill="#111418"/>
@@ -365,7 +365,7 @@ def gantt_editable_table():
     out.append(
         "<w:tr>"
         + cell("PROYECTO", widths[0] + widths[1], "111418", True, "FFFFFF", "left", 2, 13)
-        + cell("MotorCasa", widths[2] + widths[3] + widths[4], "111418", True, "FFFFFF", "left", 3, 13)
+        + cell("ADDJ MOTORS", widths[2] + widths[3] + widths[4], "111418", True, "FFFFFF", "left", 3, 13)
         + "".join(cell(w, 214, "A51F2B" if i % 2 == 0 else "20262D", True, "FFFFFF", "center", 5, 12) for i, w in enumerate(weeks))
         + "</w:tr>"
     )
@@ -420,7 +420,7 @@ def image(rid, cx=5486400, cy=3254400):
 def make_docx():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     body = []
-    body += [p("MotorCasa", "Title"), p("Proyecto integrador - Sistema de compra-venta de vehiculos usados", "Subtitle")]
+    body += [p("ADDJ MOTORS", "Title"), p("Proyecto integrador - Sistema de compra-venta de vehiculos usados", "Subtitle")]
     body += [heading("Base de datos y Programacion Orientada a Objetos")]
     body += [p("Esta seccion integra los elementos que se evaluan durante la presentacion: funcionamiento de la aplicacion, interfaz grafica alineada al giro de agencia de autos, validacion del CRUD conectado a MySQL y uso de clases Java para generar el acta de compraventa.")]
     body += [heading("Planteamiento del problema", 2)]
@@ -478,7 +478,7 @@ def make_docx():
     body += [heading("Capturas de pantalla del sistema", 2)]
     body += [p("Las capturas integradas al final del documento muestran tablero, clientes, vehiculos, detalle, venta, acta y reportes.")]
     body += [heading("1. Nombre y objetivo del proyecto")]
-    body += [p("Nombre: MotorCasa - Sistema de compra-venta de vehiculos usados.")]
+    body += [p("Nombre: ADDJ MOTORS - Sistema de compra-venta de vehiculos usados.")]
     body += [p("Objetivo general: desarrollar un sistema web para una agencia de autos usados que permita registrar clientes, publicar vehiculos, consultar ofertas activas, registrar ventas, generar actas de compraventa y obtener reportes administrativos.")]
     body += [heading("2. Diagrama tiempo/esfuerzo")]
     body += [table(["Etapa", "Actividades", "Semana", "Esfuerzo"], [

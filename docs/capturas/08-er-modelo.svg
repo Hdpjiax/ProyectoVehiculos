@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
       <rect width="1200" height="720" fill="#f6f7f4"/>
       <text x="48" y="58" font-size="30" font-weight="800" fill="#111418">Modelo Entidad-Relacion</text>
-      <text x="48" y="88" font-size="18" fill="#66707a">Agencia de autos usados MotorCasa</text>
+      <text x="48" y="88" font-size="18" fill="#66707a">Agencia de autos usados ADDJ MOTORS</text>
       <g font-family="Arial">
         <rect x="70" y="150" width="290" height="310" rx="10" fill="#ffffff" stroke="#111418" stroke-width="2"/>
         <rect x="70" y="150" width="290" height="54" rx="10" fill="#111418"/>

@@ -33,7 +33,7 @@ public class GeneradorActa {
                 + ".firmas{display:grid;grid-template-columns:1fr 1fr;gap:54px;margin-top:64px;text-align:center}.firma{border-top:1px solid #111;padding-top:10px;font-size:13px}.nota{font-size:12px;color:#555;margin-top:30px;text-align:left}"
                 + "@media print{body{background:white;padding:0}.hoja{box-shadow:none;border:0}.no-print{display:none}}"
                 + "</style></head><body><main class='hoja'>"
-                + "<section class='membrete'><div><div class='marca'>MOTORCASA</div><div>Agencia de autos usados</div></div><div class='folio'><b>Folio:</b> ACTA-"
+                + "<section class='membrete'><div><div class='marca'>ADDJ MOTORS</div><div>Agencia de autos usados</div></div><div class='folio'><b>Folio:</b> ACTA-"
                 + idVehiculo + "-" + System.currentTimeMillis() + "<br><b>Lugar:</b> " + lugar + "<br><b>Fecha:</b> "
                 + fecha + "</div></section>"
                 + "<h1>ACTA DE COMPRAVENTA DE VEHÍCULO</h1>"
@@ -70,13 +70,13 @@ public class GeneradorActa {
                 + "</table>"
                 + "<h2>DECLARACIONES</h2>"
                 + "<p>EL VENDEDOR declara que el vehículo descrito se entrega en las condiciones acordadas entre las partes. EL COMPRADOR declara haber revisado la información del vehículo y aceptar el precio final señalado.</p>"
-                + "<p>Ambas partes reconocen que el pago y la entrega del vehículo quedan registrados en el sistema MotorCasa para efectos de control administrativo y generación de evidencia documental.</p>"
+                + "<p>Ambas partes reconocen que el pago y la entrega del vehículo quedan registrados en el sistema ADDJ MOTORS para efectos de control administrativo y generación de evidencia documental.</p>"
                 + "<h2>CONFORMIDAD</h2>"
                 + "<p>Leída la presente acta y enteradas las partes de su contenido, alcance y efectos, la firman de conformidad para constancia.</p>"
                 + "<section class='firmas'><div class='firma'>"
                 + limpiar(vendedor.getNombreCompleto()) + "<br>EL VENDEDOR</div><div class='firma'>"
                 + limpiar(comprador.getNombreCompleto()) + "<br>EL COMPRADOR</div></section>"
-                + "<p class='nota'>Documento generado automáticamente por MotorCasa. Imprima esta acta y conserve una copia para cada parte.</p>"
+                + "<p class='nota'>Documento generado automáticamente por ADDJ MOTORS. Imprima esta acta y conserve una copia para cada parte.</p>"
                 + "</main></body></html>";
         Files.createDirectories(Path.of("actas"));
         Files.writeString(Path.of("actas", archivo), html, StandardCharsets.UTF_8);

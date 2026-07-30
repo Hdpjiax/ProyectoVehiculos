@@ -8,8 +8,8 @@
       <rect width="1280" height="760" fill="#f3f4f1"/>
       <rect x="0" y="0" width="260" height="760" fill="url(#side)"/>
       <rect x="24" y="28" width="48" height="48" rx="8" fill="#a51f2b"/>
-      <text x="39" y="60" font-size="18" font-weight="800" fill="#fff">MC</text>
-      <text x="88" y="58" font-size="24" font-weight="800" fill="#fff">MotorCasa</text>
+      <text x="39" y="60" font-size="18" font-weight="800" fill="#fff">AM</text>
+      <text x="88" y="58" font-size="24" font-weight="800" fill="#fff">ADDJ MOTORS</text>
       <text x="32" y="130" font-size="18" fill="#fff">Tablero</text>
       <text x="32" y="178" font-size="18" fill="#cfd5d8">Clientes</text>
       <text x="32" y="226" font-size="18" fill="#cfd5d8">Vehiculos</text>

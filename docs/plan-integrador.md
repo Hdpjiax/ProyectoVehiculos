@@ -2,7 +2,7 @@
 
 ## 1. Nombre y objetivo del proyecto
 
-**Nombre:** MotorCasa - Sistema de compra-venta de vehiculos usados.
+**Nombre:** ADDJ MOTORS - Sistema de compra-venta de vehiculos usados.
 
 **Objetivo general:** desarrollar un sistema web para una agencia de autos usados que permita registrar clientes, publicar vehiculos, consultar ofertas activas, registrar ventas, generar actas de compraventa y obtener reportes administrativos.
 
@@ -42,7 +42,7 @@ Duracion total estimada: **5 semanas**.
 
 ```mermaid
 gantt
-  title Cronograma MotorCasa
+  title Cronograma ADDJ MOTORS
   dateFormat  YYYY-MM-DD
   axisFormat %d/%m
   section Analisis

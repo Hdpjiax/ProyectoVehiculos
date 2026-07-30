@@ -4,15 +4,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MotorCasa | Agencia de autos</title>
+  <title>ADDJ MOTORS | Agencia de autos</title>
+  <link rel="icon" type="image/svg+xml" href="assets/addj-motors-icon.svg">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
   <aside class="barra-lateral" aria-label="Navegacion principal">
     <a class="marca" href="#tablero" data-tab-link="tablero">
-      <span class="marca-icono">MC</span>
-      <span>MotorCasa</span>
+      <img class="marca-icono" src="assets/addj-motors-icon.svg" alt="" aria-hidden="true">
+      <span>ADDJ MOTORS</span>
     </a>
     <nav class="nav-tabs">
       <a href="#tablero" data-tab-link="tablero">Tablero</a>
@@ -72,7 +73,7 @@
         <div class="placa-auto" aria-hidden="true">
           <span>AGENCIA</span>
           <strong>2026</strong>
-          <small>MotorCasa</small>
+          <small>ADDJ MOTORS</small>
         </div>
       </section>
 
@@ -216,6 +217,7 @@
                   <option value="TARJETA">Tarjeta</option>
                   <option value="CHEQUE">Cheque</option>
                 </select></label>
+              <label>Referencia de pago<input name="referenciaPago" placeholder="Folio, transferencia o recibo"></label>
               <label>Observacion del abono<input name="observacionAbono" placeholder="Ej. Anticipo inicial"></label>
             </div>
             <label>Lugar de celebracion<input name="lugar" value="Morelia, Michoacan." required></label>
@@ -255,6 +257,25 @@
             <button class="boton" type="button" data-print="vendidos">Imprimir</button>
           </div>
         </div>
+        <form id="filtroVentas" class="filtros filtros-ventas">
+          <label>Desde<input name="fechaInicio" type="date"></label>
+          <label>Hasta<input name="fechaFin" type="date"></label>
+          <label>Pago<select name="estatusPago">
+              <option value="">Todos</option>
+              <option value="PAGADO">Pagado</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="APARTADO">Apartado</option>
+            </select></label>
+          <label>Venta<select name="estadoVenta">
+              <option value="">Todas</option>
+              <option value="ACTIVA">Activas</option>
+              <option value="CANCELADA">Canceladas</option>
+            </select></label>
+          <label>Buscar<input name="buscar" placeholder="Comprador, vendedor, serie o folio"></label>
+          <label>Limite<input name="limite" type="number" min="1" max="100" placeholder="20"></label>
+          <button class="boton" type="submit">Buscar</button>
+          <button class="enlace" type="reset">Limpiar filtros</button>
+        </form>
         <div id="listaVendidos" class="tabla-lista"></div>
       </section>
     </section>
@@ -271,6 +292,13 @@
     <div class="modal-contenido">
       <button class="enlace modal-cerrar" type="button" data-cerrar-abonos>Cerrar</button>
       <div id="detalleAbonos"></div>
+    </div>
+  </dialog>
+
+  <dialog id="modalVenta" class="modal">
+    <div class="modal-contenido">
+      <button class="enlace modal-cerrar" type="button" data-cerrar-venta>Cerrar</button>
+      <div id="detalleVenta"></div>
     </div>
   </dialog>
 

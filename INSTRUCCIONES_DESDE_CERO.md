@@ -1,4 +1,4 @@
-# Instrucciones desde cero para ejecutar MotorCasa en otra computadora
+# Instrucciones desde cero para ejecutar ADDJ MOTORS en otra computadora
 
 Este documento explica como instalar y ejecutar el proyecto `ProyectoVehiculos` en una computadora nueva, sin usar archivos `.bat`.
 

@@ -55,6 +55,18 @@ function monto(valor) {
   return Number(valor || 0);
 }
 
+function folioVenta(id) {
+  return `VTA-${String(id).padStart(5, '0')}`;
+}
+
+function errorMysql(error) {
+  if (error.code === 'ER_DUP_ENTRY') return 'Ya existe un registro con datos unicos repetidos.';
+  if (error.code === 'ER_NO_REFERENCED_ROW_2') return 'El registro relacionado no existe. Revise comprador, vendedor o vehiculo.';
+  if (error.code === 'ER_ROW_IS_REFERENCED_2') return 'No se puede eliminar porque existe historial relacionado.';
+  if (error.code === 'ER_BAD_FIELD_ERROR') return 'Falta actualizar la base de datos. Ejecute la migracion 002.';
+  return error.message || 'Error interno';
+}
+
 function texto(valor) {
   return String(valor || '').trim().normalize('NFC');
 }
@@ -101,7 +113,7 @@ function filtrosVehiculos(url, soloPublicados = false) {
     FROM vehiculos v
     JOIN clientes c ON c.id_cliente = v.id_vendedor
     WHERE 1 = 1`;
-  if (soloPublicados) sql += " AND v.estado = 'PUBLICADO'";
+  if (soloPublicados) sql += " AND v.estado IN ('PUBLICADO','APARTADO')";
   if (q.get('modelo')) { sql += ' AND v.modelo = ?'; valores.push(q.get('modelo')); }
   if (q.get('marca')) { sql += ' AND v.marca LIKE ?'; valores.push(`%${q.get('marca')}%`); }
   if (q.get('linea')) { sql += ' AND v.linea LIKE ?'; valores.push(`%${q.get('linea')}%`); }
@@ -247,6 +259,17 @@ async function vehiculos(req, res, ruta, url) {
       return responder(res, 200, { mensaje: 'Vehiculo eliminado' });
     }
   }
+  if (/^\/api\/vehiculos\/\d+\/estado$/.test(ruta) && req.method === 'PUT') {
+    const id = ruta.split('/')[3];
+    const d = await cuerpo(req);
+    if (!['PUBLICADO', 'APARTADO'].includes(d.estado)) throw new Error('Estado de vehiculo invalido.');
+    const [[actual]] = await pool.execute('SELECT estado FROM vehiculos WHERE id_vehiculo = ?', [id]);
+    if (!actual) throw new Error('El vehiculo no existe.');
+    if (actual.estado === 'VENDIDO') throw new Error('No se puede cambiar el estado de un vehiculo vendido.');
+    await pool.execute('UPDATE vehiculos SET estado = ? WHERE id_vehiculo = ?', [d.estado, id]);
+    await pool.execute('INSERT INTO historial_estados(entidad, id_entidad, estado_anterior, estado_nuevo, motivo) VALUES(?, ?, ?, ?, ?)', ['VEHICULO', id, actual.estado, d.estado, d.motivo || 'Cambio manual de estado']);
+    return responder(res, 200, { mensaje: 'Estado de vehiculo actualizado.' });
+  }
 }
 
 async function ventas(req, res, ruta) {
@@ -258,20 +281,23 @@ async function ventas(req, res, ruta) {
     let idVenta;
     try {
       await conexion.beginTransaction();
-      const [filas] = await conexion.execute("SELECT v.*, c.nombre_completo vendedor, c.domicilio domicilio_vendedor, c.correo_electronico correo_vendedor, c.telefono telefono_vendedor FROM vehiculos v JOIN clientes c ON c.id_cliente = v.id_vendedor WHERE v.id_vehiculo = ? AND v.estado = 'PUBLICADO' FOR UPDATE", [d.idVehiculo]);
+      const [filas] = await conexion.execute("SELECT v.*, c.nombre_completo vendedor, c.domicilio domicilio_vendedor, c.correo_electronico correo_vendedor, c.telefono telefono_vendedor FROM vehiculos v JOIN clientes c ON c.id_cliente = v.id_vendedor WHERE v.id_vehiculo = ? AND v.estado IN ('PUBLICADO','APARTADO') FOR UPDATE", [d.idVehiculo]);
       if (!filas.length) throw new Error('El vehiculo no existe o ya fue vendido.');
       const v = filas[0];
       if (Number(v.id_vendedor) === Number(d.idComprador)) throw new Error('Comprador y vendedor deben ser diferentes.');
       const [[comprador]] = await conexion.execute('SELECT * FROM clientes WHERE id_cliente = ?', [d.idComprador]);
       if (!comprador) throw new Error('El comprador no existe.');
-      const [r] = await conexion.execute('INSERT INTO ventas(id_vehiculo, id_comprador, precio_final, estatus_pago) VALUES(?, ?, ?, ?)', [d.idVehiculo, d.idComprador, d.precioFinal, d.estatusPago || 'PAGADO']);
+      if (d.estatusPago === 'APARTADO' && monto(d.montoAbono) <= 0) throw new Error('El apartado requiere un monto pagado mayor a cero.');
+      const [r] = await conexion.execute('INSERT INTO ventas(id_vehiculo, id_comprador, precio_final, estatus_pago, estado_venta) VALUES(?, ?, ?, ?, ?)', [d.idVehiculo, d.idComprador, d.precioFinal, d.estatusPago || 'PAGADO', 'ACTIVA']);
       idVenta = r.insertId;
+      await conexion.execute('UPDATE ventas SET folio_venta = ? WHERE id_venta = ?', [folioVenta(idVenta), idVenta]);
+      await conexion.execute('INSERT INTO historial_estados(entidad, id_entidad, estado_anterior, estado_nuevo, motivo) VALUES(?, ?, ?, ?, ?)', ['VENTA', idVenta, null, 'ACTIVA', 'Registro inicial de venta']);
       if ((d.estatusPago === 'PENDIENTE' || d.estatusPago === 'APARTADO') && monto(d.montoAbono) > 0) {
         if (monto(d.montoAbono) > monto(d.precioFinal)) throw new Error('El abono no puede ser mayor al precio final.');
-        await conexion.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, observaciones) VALUES(?, ?, ?, ?)', [idVenta, d.montoAbono, d.metodoPago || 'EFECTIVO', d.observacionAbono || 'Abono inicial']);
+        await conexion.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, referencia_pago, observaciones) VALUES(?, ?, ?, ?, ?)', [idVenta, d.montoAbono, d.metodoPago || 'EFECTIVO', d.referenciaPago || '', d.observacionAbono || 'Abono inicial']);
       }
       if (d.estatusPago === 'PAGADO') {
-        await conexion.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, observaciones) VALUES(?, ?, ?, ?)', [idVenta, d.precioFinal, d.metodoPago || 'EFECTIVO', 'Pago total al registrar la venta']);
+        await conexion.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, referencia_pago, observaciones) VALUES(?, ?, ?, ?, ?)', [idVenta, d.precioFinal, d.metodoPago || 'EFECTIVO', d.referenciaPago || '', 'Pago total al registrar la venta']);
       }
       await conexion.execute("UPDATE vehiculos SET estado = 'VENDIDO' WHERE id_vehiculo = ?", [d.idVehiculo]);
       datosActa = {
@@ -307,8 +333,10 @@ async function ventas(req, res, ruta) {
       await conexion.beginTransaction();
       const [[venta]] = await conexion.execute('SELECT * FROM ventas WHERE id_venta = ?', [id]);
       if (!venta) throw new Error('La venta no existe.');
+      if (venta.estado_venta === 'CANCELADA') throw new Error('La venta ya esta cancelada.');
       await conexion.execute("UPDATE vehiculos SET estado = 'PUBLICADO' WHERE id_vehiculo = ?", [venta.id_vehiculo]);
-      await conexion.execute('DELETE FROM ventas WHERE id_venta = ?', [id]);
+      await conexion.execute("UPDATE ventas SET estado_venta = 'CANCELADA' WHERE id_venta = ?", [id]);
+      await conexion.execute('INSERT INTO historial_estados(entidad, id_entidad, estado_anterior, estado_nuevo, motivo) VALUES(?, ?, ?, ?, ?)', ['VENTA', id, 'ACTIVA', 'CANCELADA', 'Cancelacion conservando historial']);
       await conexion.commit();
       return responder(res, 200, { mensaje: 'Venta cancelada' });
     } catch (error) {
@@ -327,18 +355,31 @@ async function ventas(req, res, ruta) {
     const id = ruta.split('/')[3];
     const d = await cuerpo(req);
     positivo(d.monto, 'Monto del abono');
-    const [[venta]] = await pool.execute(`SELECT ven.*, COALESCE(SUM(a.monto), 0) AS abonado
-      FROM ventas ven LEFT JOIN abonos_venta a ON a.id_venta = ven.id_venta
-      WHERE ven.id_venta = ?
-      GROUP BY ven.id_venta`, [id]);
+    const [[venta]] = await pool.execute(`SELECT ven.*, COALESCE(a.abonado, 0) AS abonado
+      FROM ventas ven
+      LEFT JOIN (SELECT id_venta, SUM(monto) AS abonado FROM abonos_venta GROUP BY id_venta) a ON a.id_venta = ven.id_venta
+      WHERE ven.id_venta = ?`, [id]);
     if (!venta) throw new Error('La venta no existe.');
+    if (venta.estado_venta === 'CANCELADA') throw new Error('No se pueden agregar abonos a una venta cancelada.');
+    if (venta.estatus_pago === 'PAGADO') throw new Error('No se pueden agregar abonos a una venta ya pagada.');
     const nuevoTotal = monto(venta.abonado) + monto(d.monto);
     if (nuevoTotal > monto(venta.precio_final)) throw new Error('El total abonado no puede superar el precio final.');
-    await pool.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, observaciones) VALUES(?, ?, ?, ?)', [id, d.monto, d.metodoPago || 'EFECTIVO', d.observaciones || '']);
+    await pool.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, referencia_pago, observaciones) VALUES(?, ?, ?, ?, ?)', [id, d.monto, d.metodoPago || 'EFECTIVO', d.referenciaPago || '', d.observaciones || '']);
     if (nuevoTotal >= monto(venta.precio_final)) {
       await pool.execute("UPDATE ventas SET estatus_pago = 'PAGADO' WHERE id_venta = ?", [id]);
     }
     return responder(res, 201, { mensaje: 'Abono registrado.', abonado: nuevoTotal, saldo: monto(venta.precio_final) - nuevoTotal });
+  }
+  if (/^\/api\/ventas\/\d+\/estatus$/.test(ruta) && req.method === 'PUT') {
+    const id = ruta.split('/')[3];
+    const d = await cuerpo(req);
+    if (!['PENDIENTE', 'PAGADO', 'APARTADO'].includes(d.estatusPago)) throw new Error('Estatus de pago invalido.');
+    const [[venta]] = await pool.execute('SELECT * FROM ventas WHERE id_venta = ?', [id]);
+    if (!venta) throw new Error('La venta no existe.');
+    if (venta.estado_venta === 'CANCELADA') throw new Error('No se puede cambiar el pago de una venta cancelada.');
+    await pool.execute('UPDATE ventas SET estatus_pago = ? WHERE id_venta = ?', [d.estatusPago, id]);
+    await pool.execute('INSERT INTO historial_estados(entidad, id_entidad, estado_anterior, estado_nuevo, motivo) VALUES(?, ?, ?, ?, ?)', ['PAGO', id, venta.estatus_pago, d.estatusPago, d.motivo || 'Cambio manual de estatus']);
+    return responder(res, 200, { mensaje: 'Estatus actualizado.' });
   }
   if (/^\/api\/ventas\/\d+\/acta$/.test(ruta) && req.method === 'POST') {
     const id = ruta.split('/')[3];
@@ -365,17 +406,30 @@ async function reportes(req, res, ruta, url) {
     return responder(res, 200, filas);
   }
   if (ruta === '/api/reportes/vendidos' && req.method === 'GET') {
-    const [filas] = await pool.query(`SELECT ven.id_venta, v.*, ven.fecha_venta, ven.precio_final, ven.estatus_pago, ven.ruta_acta,
-      COALESCE(SUM(a.monto), 0) AS monto_pagado,
-      ven.precio_final - COALESCE(SUM(a.monto), 0) AS saldo_pendiente,
+    const q = url.searchParams;
+    const valores = [];
+    let sql = `SELECT ven.id_venta, ven.folio_venta, v.*, ven.fecha_venta, ven.precio_final, ven.estatus_pago, ven.estado_venta, ven.ruta_acta,
+      COALESCE(a.monto_pagado, 0) AS monto_pagado,
+      ven.precio_final - COALESCE(a.monto_pagado, 0) AS saldo_pendiente,
       cv.nombre_completo AS vendedor, cc.nombre_completo AS comprador
       FROM ventas ven
       JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo
       JOIN clientes cv ON cv.id_cliente = v.id_vendedor
       JOIN clientes cc ON cc.id_cliente = ven.id_comprador
-      LEFT JOIN abonos_venta a ON a.id_venta = ven.id_venta
-      GROUP BY ven.id_venta
-      ORDER BY ven.fecha_venta DESC`);
+      LEFT JOIN (SELECT id_venta, SUM(monto) AS monto_pagado FROM abonos_venta GROUP BY id_venta) a ON a.id_venta = ven.id_venta
+      WHERE 1 = 1`;
+    if (q.get('fechaInicio')) { sql += ' AND DATE(ven.fecha_venta) >= ?'; valores.push(q.get('fechaInicio')); }
+    if (q.get('fechaFin')) { sql += ' AND DATE(ven.fecha_venta) <= ?'; valores.push(q.get('fechaFin')); }
+    if (q.get('estatusPago')) { sql += ' AND ven.estatus_pago = ?'; valores.push(q.get('estatusPago')); }
+    if (q.get('estadoVenta')) { sql += ' AND ven.estado_venta = ?'; valores.push(q.get('estadoVenta')); }
+    if (q.get('buscar')) {
+      sql += ' AND (cc.nombre_completo LIKE ? OR cv.nombre_completo LIKE ? OR v.marca LIKE ? OR v.linea LIKE ? OR v.numero_serie LIKE ? OR ven.folio_venta LIKE ?)';
+      const b = `%${q.get('buscar')}%`;
+      valores.push(b, b, b, b, b, b);
+    }
+    sql += ' ORDER BY ven.fecha_venta DESC';
+    if (q.get('limite')) sql += ` LIMIT ${Math.min(Math.max(parseInt(q.get('limite'), 10) || 20, 1), 100)}`;
+    const [filas] = await pool.execute(sql, valores);
     return responder(res, 200, filas);
   }
   if (ruta === '/api/reportes/estadisticas' && req.method === 'GET') {
@@ -432,7 +486,7 @@ http.createServer(async (req, res) => {
     enviarArchivo(res, archivo);
   } catch (error) {
     console.error(error);
-    const cliente = error.message?.startsWith('Falta') || error.message?.includes('no existe') || error.message?.includes('vendido') || error.message?.includes('mayor a cero') || error.code?.startsWith('ER_DUP');
-    responder(res, cliente ? 400 : 500, { error: error.code === 'ER_DUP_ENTRY' ? 'Ya existe un registro con datos unicos repetidos.' : error.message || 'Error interno' });
+    const cliente = error.message?.startsWith('Falta') || error.message?.includes('no existe') || error.message?.includes('vendido') || error.message?.includes('mayor a cero') || error.message?.includes('mayor al') || error.message?.includes('cancelada') || error.message?.includes('pagada') || error.code?.startsWith('ER_');
+    responder(res, cliente ? 400 : 500, { error: errorMysql(error) });
   }
 }).listen(puerto, () => console.log(`Sistema disponible en http://localhost:${puerto}`));

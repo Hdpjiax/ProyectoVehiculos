@@ -1,4 +1,4 @@
-# MotorCasa - Sistema de compra-venta de vehiculos
+# ADDJ MOTORS - Sistema de compra-venta de vehiculos
 
 Proyecto escolar para administrar clientes, vehiculos publicados, ventas, reportes y actas de compraventa.
 
@@ -44,8 +44,12 @@ http://localhost:8080
 - Busqueda avanzada por modelo, marca, linea, color, transmision, cilindros, nacionalidad, precio y fecha.
 - Ordenamiento por precio, modelo y fecha.
 - Registro de venta con validacion de comprador distinto al vendedor.
-- Cancelacion de venta para republicar el vehiculo.
+- Apartado de vehiculos antes de venta.
+- Registro de ventas pagadas, pendientes o apartadas.
+- Control de abonos por venta con metodo, referencia y observaciones.
+- Cancelacion de venta conservando abonos, acta e historial.
 - Reportes de ofertas activas y vehiculos vendidos.
+- Filtros de ventas por fecha, pago, estado y busqueda por comprador o vendedor.
 - Exportacion CSV e impresion de reportes.
 - Dashboard con ingresos totales, utilidad estimada, clientes, activos y vendidos.
 - Acta formal HTML con datos del vehiculo, vendedor y comprador.
@@ -58,6 +62,8 @@ http://localhost:8080
 - `database/migrations/`: scripts SQL para crear o actualizar la base.
 - `database/seeds/`: datos demo.
 - `docs/pruebas-manuales.md`: checklist de pruebas para entrega.
+- `docs/checklist-exposicion.md`: orden sugerido para mostrar el sistema.
 - `docs/guia-visual.md`: recorrido de pantallas y flujos.
 - `docs/entrega-release.md`: instrucciones para ejecutar en otra computadora sin usar `.bat`.
 - `docs/plan-integrador.md`: costos, Gantt, riesgos, precio de venta y evidencias.
+- `database/seeds/reset_demo_completo.sql`: datos demo completos con ventas, abonos e historial.

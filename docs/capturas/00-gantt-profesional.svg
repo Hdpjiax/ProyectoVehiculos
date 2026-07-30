@@ -11,7 +11,7 @@
       </defs>
       <rect width="1600" height="880" fill="#eef0ec"/>
       <rect x="0" y="0" width="1600" height="118" fill="url(#hero)"/>
-      <text x="54" y="54" font-size="18" font-weight="800" fill="#e7eaec">MOTORCASA</text>
+      <text x="54" y="54" font-size="18" font-weight="800" fill="#e7eaec">ADDJ MOTORS</text>
       <text x="54" y="94" font-size="38" font-weight="900" fill="#ffffff">DIAGRAMA DE GANTT SEMANAL</text>
       <text x="1220" y="52" font-size="15" font-weight="800" fill="#ffffff">Proyecto integrador</text>
       <text x="1220" y="82" font-size="15" fill="#f2d6da">Duracion total: 5 semanas</text>
@@ -19,7 +19,7 @@
       <rect x="44" y="138" width="1426" height="635" rx="16" fill="#ffffff" filter="url(#shadow)"/>
       <rect x="44" y="138" width="1426" height="70" rx="16" fill="#ffffff"/>
       <text x="70" y="170" font-size="13" font-weight="800" fill="#66707a">NOMBRE DEL PROYECTO</text>
-      <text x="70" y="197" font-size="20" font-weight="900" fill="#111418">MotorCasa - Sistema de compra-venta de vehiculos</text>
+      <text x="70" y="197" font-size="20" font-weight="900" fill="#111418">ADDJ MOTORS - Sistema de compra-venta de vehiculos</text>
       <text x="620" y="170" font-size="13" font-weight="800" fill="#66707a">RESPONSABLE</text>
       <text x="620" y="197" font-size="18" font-weight="800" fill="#111418">Equipo de desarrollo</text>
       <text x="920" y="170" font-size="13" font-weight="800" fill="#66707a">INICIO</text>

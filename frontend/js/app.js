@@ -35,6 +35,34 @@ function actualizarCamposAbono() {
   const grupo = $('#camposAbonoInicial');
   grupo.hidden = estado === 'PAGADO';
   $('#formVenta').montoAbono.required = estado === 'PENDIENTE' || estado === 'APARTADO';
+  actualizarSaldoVenta();
+}
+
+function actualizarSaldoVenta() {
+  const precio = Number($('#formVenta').precioFinal.value || 0);
+  const abono = Number($('#formVenta').montoAbono.value || 0);
+  const saldo = Math.max(precio - abono, 0);
+  let salida = $('#saldoVentaVivo');
+  if (!salida) {
+    salida = document.createElement('p');
+    salida.id = 'saldoVentaVivo';
+    salida.className = 'meta';
+    $('#camposAbonoInicial').appendChild(salida);
+  }
+  salida.textContent = `Saldo pendiente estimado: ${moneda.format(saldo)}`;
+}
+
+function badge(textoEstado) {
+  const clase = {
+    PUBLICADO: 'estado',
+    VENDIDO: 'estado vendido',
+    PAGADO: 'estado',
+    PENDIENTE: 'estado vendido',
+    APARTADO: 'estado apartado',
+    ACTIVA: 'estado',
+    CANCELADA: 'estado vendido'
+  }[textoEstado] || 'estado';
+  return `<span class="${clase}">${escapar(textoEstado || '')}</span>`;
 }
 
 function limpiarFormulario(formulario) {
@@ -47,6 +75,7 @@ function limpiarFormulario(formulario) {
 }
 
 function estadoClase(estado) {
+  if (estado === 'APARTADO') return 'estado apartado';
   return estado === 'VENDIDO' ? 'estado vendido' : 'estado';
 }
 
@@ -134,7 +163,7 @@ function imprimirReporte(tipo) {
     </head>
     <body>
       <h1>${escapar(titulo)}</h1>
-      <p class="subtitulo">MotorCasa - generado el ${new Date().toLocaleDateString('es-MX')}</p>
+      <p class="subtitulo">ADDJ MOTORS - generado el ${new Date().toLocaleDateString('es-MX')}</p>
       ${contenido}
       <script>
         window.onload = () => {
@@ -204,7 +233,7 @@ async function cargarOfertas(filtros = '') {
 
 async function cargarVehiculos() {
   vehiculos = await api('/api/vehiculos');
-  const publicados = vehiculos.filter(v => v.estado === 'PUBLICADO');
+  const publicados = vehiculos.filter(v => v.estado === 'PUBLICADO' || v.estado === 'APARTADO');
   $('#listaVehiculos').innerHTML = vehiculos.length ? vehiculos.map(v => `
     <article class="item">
       <div>
@@ -214,14 +243,15 @@ async function cargarVehiculos() {
       </div>
       <div class="acciones">
         <button class="enlace" data-detalle-vehiculo="${v.id_vehiculo}">Detalle</button>
-        ${v.estado === 'PUBLICADO' ? `<button class="enlace" data-editar-vehiculo="${v.id_vehiculo}">Editar</button><button class="enlace" data-borrar-vehiculo="${v.id_vehiculo}">Eliminar</button>` : ''}
+        ${v.estado === 'PUBLICADO' ? `<button class="enlace" data-apartar-vehiculo="${v.id_vehiculo}">Apartar</button><button class="enlace" data-editar-vehiculo="${v.id_vehiculo}">Editar</button><button class="enlace" data-borrar-vehiculo="${v.id_vehiculo}">Eliminar</button>` : ''}
+        ${v.estado === 'APARTADO' ? `<button class="enlace" data-liberar-vehiculo="${v.id_vehiculo}">Liberar</button>` : ''}
       </div>
     </article>`).join('') : '<p class="meta">No hay vehiculos registrados.</p>';
-  $('select[name="idVehiculo"]').innerHTML = `<option value="">Selecciona un vehiculo</option>${publicados.map(v => `<option value="${v.id_vehiculo}" data-precio="${v.precio_venta}">${escapar(v.marca)} ${escapar(v.linea)} ${v.modelo} - ${moneda.format(v.precio_venta)}</option>`).join('')}`;
+  $('select[name="idVehiculo"]').innerHTML = `<option value="">Selecciona un vehiculo</option>${publicados.map(v => `<option value="${v.id_vehiculo}" data-precio="${v.precio_venta}">${escapar(v.marca)} ${escapar(v.linea)} ${v.modelo} (${v.estado}) - ${moneda.format(v.precio_venta)}</option>`).join('')}`;
 }
 
-async function cargarVendidos() {
-  vendidos = await api('/api/reportes/vendidos');
+async function cargarVendidos(filtros = '') {
+  vendidos = await api(`/api/reportes/vendidos${filtros}`);
   const resumen = vendidos.slice(0, 5).map(v => `
     <article class="item">
       <div>
@@ -230,14 +260,25 @@ async function cargarVendidos() {
         <p class="meta">${escapar(v.vendedor)} a ${escapar(v.comprador)}</p>
       </div>
     </article>`).join('');
-  const reporte = vendidos.map(v => `
-    <article class="fila-reporte">
-      <div><strong>${escapar(v.marca)} ${escapar(v.linea)} ${v.modelo}</strong><p class="meta">Serie ${escapar(v.numero_serie || '')}</p></div>
-      <div><span class="meta">Vendedor</span><strong>${escapar(v.vendedor)}</strong></div>
-      <div><span class="meta">Comprador</span><strong>${escapar(v.comprador)}</strong></div>
-      <div><span class="meta">Fecha</span><strong>${fecha(v.fecha_venta)}</strong></div>
-      <div><span class="meta">Pago</span><strong>${moneda.format(v.monto_pagado || 0)} / ${moneda.format(v.precio_final)}</strong><p class="meta">Saldo: ${moneda.format(v.saldo_pendiente || 0)}</p><p><span class="${v.estatus_pago === 'APARTADO' ? 'estado apartado' : estadoClase(v.estatus_pago === 'PENDIENTE' ? 'VENDIDO' : 'PUBLICADO')}">${escapar(v.estatus_pago || '')}</span></p>${v.ruta_acta ? `<a class="enlace" target="_blank" href="${escapar(v.ruta_acta)}">Acta</a>` : ''}<button class="enlace" data-ver-abonos="${v.id_venta}">Abonos</button><button class="enlace" data-regenerar-acta="${v.id_venta}">Regenerar</button><button class="enlace" data-cancelar-venta="${v.id_venta}">Cancelar</button></div>
-    </article>`).join('');
+  const reporte = vendidos.length ? `
+    <div class="tabla-reporte ventas-tabla">
+      <div class="tabla-encabezado"><span>Venta</span><span>Cliente</span><span>Fecha</span><span>Pago</span><span>Estado</span><span>Acciones</span></div>
+      ${vendidos.map(v => `
+        <article class="tabla-fila">
+          <div><strong>${escapar(v.folio_venta || `VTA-${v.id_venta}`)}</strong><p class="meta">${escapar(v.marca)} ${escapar(v.linea)} ${v.modelo}<br>Serie ${escapar(v.numero_serie || '')}</p></div>
+          <div><span class="meta">Vendedor</span><strong>${escapar(v.vendedor)}</strong><span class="meta">Comprador</span><strong>${escapar(v.comprador)}</strong></div>
+          <div><strong>${fecha(v.fecha_venta)}</strong></div>
+          <div><strong>${moneda.format(v.monto_pagado || 0)} / ${moneda.format(v.precio_final)}</strong><p class="meta">Saldo: ${moneda.format(v.saldo_pendiente || 0)}</p>${badge(v.estatus_pago)}</div>
+          <div>${badge(v.estado_venta || 'ACTIVA')}</div>
+          <div class="acciones-menu">
+            <button class="enlace" data-detalle-venta="${v.id_venta}">Detalle</button>
+            ${v.ruta_acta ? `<a class="enlace" target="_blank" href="${escapar(v.ruta_acta)}">Acta</a>` : `<button class="enlace" data-regenerar-acta="${v.id_venta}">Regenerar acta</button>`}
+            <button class="enlace" data-ver-abonos="${v.id_venta}">Abonos</button>
+            <button class="enlace" data-cambiar-estatus="${v.id_venta}">Cambiar pago</button>
+            ${v.estado_venta !== 'CANCELADA' ? `<button class="enlace" data-cancelar-venta="${v.id_venta}">Cancelar</button>` : ''}
+          </div>
+        </article>`).join('')}
+    </div>` : '<p class="meta empty-state">No hay ventas con esos filtros. Registra una venta o limpia los filtros.</p>';
   $('#listaVendidosResumen').innerHTML = resumen || '<p class="meta">Aun no hay ventas registradas.</p>';
   $('#listaVendidos').innerHTML = reporte || '<p class="meta">Aun no hay ventas registradas.</p>';
 }
@@ -249,7 +290,7 @@ async function mostrarAbonos(idVenta) {
     <p class="etiqueta">CONTROL DE PAGOS</p>
     <h2>${escapar(venta?.marca || '')} ${escapar(venta?.linea || '')} ${venta?.modelo || ''}</h2>
     <p class="meta">Total: ${moneda.format(venta?.precio_final || 0)} · Pagado: ${moneda.format(venta?.monto_pagado || 0)} · Saldo: ${moneda.format(venta?.saldo_pendiente || 0)}</p>
-    <form id="formAbono" class="formulario">
+    <form id="formAbono" class="formulario" ${(venta?.estatus_pago === 'PAGADO' || venta?.estado_venta === 'CANCELADA') ? 'hidden' : ''}>
       <input type="hidden" name="idVenta" value="${idVenta}">
       <label>Monto<input name="monto" type="number" min="0.01" step="0.01" max="${venta?.saldo_pendiente || ''}" required></label>
       <label>Metodo de pago<select name="metodoPago">
@@ -259,12 +300,49 @@ async function mostrarAbonos(idVenta) {
         <option value="CHEQUE">Cheque</option>
       </select></label>
       <label>Observaciones<input name="observaciones" placeholder="Referencia, comentario o folio"></label>
+      <label>Referencia<input name="referenciaPago" placeholder="Folio bancario o referencia"></label>
       <button class="boton primario" type="submit">Agregar abono</button>
     </form>
     <div class="lista">
-      ${abonos.length ? abonos.map(a => `<article class="item"><div><strong>${moneda.format(a.monto)}</strong><p>${escapar(a.metodo_pago)} · ${fecha(a.fecha_abono)}</p><p class="meta">${escapar(a.observaciones || '')}</p></div></article>`).join('') : '<p class="meta">No hay abonos registrados.</p>'}
+      ${abonos.length ? abonos.map(a => `<article class="item"><div><strong>${moneda.format(a.monto)}</strong><p>${escapar(a.metodo_pago)} · ${fecha(a.fecha_abono)}</p><p class="meta">${escapar(a.referencia_pago || '')} ${escapar(a.observaciones || '')}</p></div></article>`).join('') : '<p class="meta">No hay abonos registrados.</p>'}
     </div>`;
   if (!$('#modalAbonos').open) $('#modalAbonos').showModal();
+}
+
+async function mostrarDetalleVenta(idVenta) {
+  const venta = vendidos.find(v => Number(v.id_venta) === Number(idVenta));
+  if (!venta) return;
+  const abonos = await api(`/api/ventas/${idVenta}/abonos`);
+  $('#detalleVenta').innerHTML = `
+    <p class="etiqueta">DETALLE DE VENTA</p>
+    <h2>${escapar(venta.folio_venta || `Venta ${venta.id_venta}`)}</h2>
+    <div class="detalle-grid">
+      <div><span>Vehiculo</span>${escapar(venta.marca)} ${escapar(venta.linea)} ${venta.modelo}</div>
+      <div><span>Serie</span>${escapar(venta.numero_serie || '')}</div>
+      <div><span>Vendedor</span>${escapar(venta.vendedor)}</div>
+      <div><span>Comprador</span>${escapar(venta.comprador)}</div>
+      <div><span>Precio final</span>${moneda.format(venta.precio_final)}</div>
+      <div><span>Pagado</span>${moneda.format(venta.monto_pagado || 0)}</div>
+      <div><span>Saldo</span>${moneda.format(venta.saldo_pendiente || 0)}</div>
+      <div><span>Estatus</span>${badge(venta.estatus_pago)} ${badge(venta.estado_venta || 'ACTIVA')}</div>
+    </div>
+    <h3>Abonos</h3>
+    <div class="lista">${abonos.length ? abonos.map(a => `<article class="item"><div><strong>${moneda.format(a.monto)}</strong><p>${escapar(a.metodo_pago)} · ${fecha(a.fecha_abono)}</p><p class="meta">${escapar(a.referencia_pago || '')} ${escapar(a.observaciones || '')}</p></div></article>`).join('') : '<p class="meta">No hay abonos registrados.</p>'}</div>
+    ${venta.ruta_acta ? `<a class="boton primario" target="_blank" href="${escapar(venta.ruta_acta)}">Reimprimir acta</a>` : `<button class="boton primario" data-regenerar-acta="${venta.id_venta}">Regenerar acta</button>`}`;
+  $('#modalVenta').showModal();
+}
+
+async function cambiarEstatusPago(idVenta) {
+  const venta = vendidos.find(v => Number(v.id_venta) === Number(idVenta));
+  if (!venta) return;
+  const nuevo = prompt('Nuevo estatus de pago: PAGADO, PENDIENTE o APARTADO', venta.estatus_pago);
+  if (!nuevo) return;
+  const estatusPago = nuevo.trim().toUpperCase();
+  if (!['PAGADO', 'PENDIENTE', 'APARTADO'].includes(estatusPago)) return aviso('Estatus invalido.');
+  const motivo = prompt('Motivo del cambio', 'Ajuste administrativo') || 'Ajuste administrativo';
+  const r = await api(`/api/ventas/${idVenta}/estatus`, { method: 'PUT', body: JSON.stringify({ estatusPago, motivo }) });
+  await cargarVendidos();
+  aviso(r.mensaje || 'Estatus actualizado.');
 }
 
 function editarCliente(id) {
@@ -353,6 +431,7 @@ $('#formVenta').addEventListener('submit', async e => {
   const vehiculo = vehiculos.find(v => String(v.id_vehiculo) === String(d.idVehiculo));
   if (vehiculo && String(vehiculo.id_vendedor) === String(d.idComprador)) return aviso('Comprador y vendedor deben ser diferentes.');
   if ((d.estatusPago === 'PENDIENTE' || d.estatusPago === 'APARTADO') && Number(d.montoAbono || 0) > Number(d.precioFinal)) return aviso('El monto pagado no puede ser mayor al precio final.');
+  if (d.estatusPago === 'APARTADO' && Number(d.montoAbono || 0) <= 0) return aviso('Un apartado requiere un monto pagado mayor a cero.');
   if (!confirm('Confirmar registro de venta? El vehiculo pasara a vendido.')) return;
   try {
     const resultado = await api('/api/ventas', { method: 'POST', body: JSON.stringify(d) });
@@ -377,17 +456,27 @@ $('#filtroVehiculos').addEventListener('submit', e => {
 
 $('#filtroVehiculos').addEventListener('reset', () => setTimeout(() => cargarOfertas().then(actualizarMetricas), 0));
 
+$('#filtroVentas').addEventListener('submit', e => {
+  e.preventDefault();
+  const p = new URLSearchParams(valor(e.currentTarget));
+  [...p.entries()].forEach(([k, v]) => !v && p.delete(k));
+  cargarVendidos(p.toString() ? `?${p}` : '').catch(x => aviso(x.message));
+});
+
+$('#filtroVentas').addEventListener('reset', () => setTimeout(() => cargarVendidos(), 0));
+
 document.addEventListener('click', async e => {
   const tab = e.target.closest('[data-tab-link]');
   if (tab) cambiarVista(tab.dataset.tabLink);
 
   const idCliente = e.target.dataset.editarCliente || e.target.dataset.borrarCliente || e.target.dataset.reactivarCliente;
-  const idVehiculo = e.target.dataset.editarVehiculo || e.target.dataset.borrarVehiculo;
+  const idVehiculo = e.target.dataset.editarVehiculo || e.target.dataset.borrarVehiculo || e.target.dataset.apartarVehiculo || e.target.dataset.liberarVehiculo;
   if (e.target.dataset.editarCliente) editarCliente(Number(idCliente));
   if (e.target.dataset.editarVehiculo) editarVehiculo(Number(idVehiculo));
   if (e.target.dataset.detalleVehiculo) mostrarDetalleVehiculo(Number(e.target.dataset.detalleVehiculo));
   if (e.target.dataset.cerrarModal !== undefined) $('#modalDetalle').close();
   if (e.target.dataset.cerrarAbonos !== undefined) $('#modalAbonos').close();
+  if (e.target.dataset.cerrarVenta !== undefined) $('#modalVenta').close();
   if (e.target.classList.contains('nuevo-registro')) limpiarFormulario(e.target.closest('form'));
   if (e.target.dataset.csv === 'ofertas') descargarCsv('ofertas-activas', ofertas);
   if (e.target.dataset.csv === 'vendidos') descargarCsv('vehiculos-vendidos', vendidos);
@@ -409,7 +498,22 @@ document.addEventListener('click', async e => {
   if (e.target.dataset.borrarVehiculo && confirm('Eliminar vehiculo?')) {
     try { await api(`/api/vehiculos/${idVehiculo}`, { method: 'DELETE' }); await cargarTodo(); } catch (x) { aviso(x.message); }
   }
-  if (e.target.dataset.cancelarVenta && confirm('Cancelar esta venta y volver a publicar el vehiculo?')) {
+  if (e.target.dataset.apartarVehiculo && confirm('Marcar este vehiculo como apartado?')) {
+    try { await api(`/api/vehiculos/${idVehiculo}/estado`, { method: 'PUT', body: JSON.stringify({ estado: 'APARTADO', motivo: 'Apartado antes de venta' }) }); await cargarTodo(); aviso('Vehiculo apartado.'); } catch (x) { aviso(x.message); }
+  }
+  if (e.target.dataset.liberarVehiculo && confirm('Liberar este vehiculo para venta?')) {
+    try { await api(`/api/vehiculos/${idVehiculo}/estado`, { method: 'PUT', body: JSON.stringify({ estado: 'PUBLICADO', motivo: 'Liberacion de apartado' }) }); await cargarTodo(); aviso('Vehiculo publicado.'); } catch (x) { aviso(x.message); }
+  }
+  if (e.target.dataset.detalleVenta) {
+    try { await mostrarDetalleVenta(e.target.dataset.detalleVenta); } catch (x) { aviso(x.message); }
+  }
+  if (e.target.dataset.cambiarEstatus) {
+    try { await cambiarEstatusPago(e.target.dataset.cambiarEstatus); } catch (x) { aviso(x.message); }
+  }
+  if (e.target.dataset.cancelarVenta) {
+    const venta = vendidos.find(v => Number(v.id_venta) === Number(e.target.dataset.cancelarVenta));
+    const texto = venta?.estatus_pago === 'PAGADO' ? 'CANCELAR PAGADA' : 'CANCELAR';
+    if (prompt(`Esta accion conservara acta y abonos, y marcara la venta como CANCELADA. Escribe "${texto}" para confirmar.`) !== texto) return;
     try { await api(`/api/ventas/${e.target.dataset.cancelarVenta}/cancelar`, { method: 'POST' }); await cargarTodo(); aviso('Venta cancelada.'); } catch (x) { aviso(x.message); }
   }
   if (e.target.dataset.regenerarActa) {
@@ -441,6 +545,8 @@ document.addEventListener('submit', async e => {
 window.addEventListener('hashchange', () => cambiarVista(location.hash.replace('#', '') || 'tablero'));
 $('select[name="idVehiculo"]').addEventListener('change', e => $('#formVenta').precioFinal.value = e.target.selectedOptions[0]?.dataset.precio || '');
 $('select[name="estatusPago"]').addEventListener('change', actualizarCamposAbono);
+$('#formVenta').precioFinal.addEventListener('input', actualizarSaldoVenta);
+$('#formVenta').montoAbono.addEventListener('input', actualizarSaldoVenta);
 $('#buscarClientes').addEventListener('input', renderClientes);
 $('#filtroEstadoClientes').addEventListener('change', () => cargarClientes().then(actualizarMetricas).catch(x => aviso(x.message)));
 

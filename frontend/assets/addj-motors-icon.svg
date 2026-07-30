@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ADDJ MOTORS">
+  <defs>
+    <linearGradient id="paint" x1="18" y1="16" x2="110" y2="118" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f04438"/>
+      <stop offset=".55" stop-color="#b42318"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="24" fill="#111418"/>
+  <path d="M24 72c2-13 10-27 19-32h42c9 5 17 19 19 32h-9l-7-13H40l-7 13h-9Z" fill="url(#paint)"/>
+  <path d="M43 43h42l8 14H35l8-14Z" fill="#f8fafc" opacity=".92"/>
+  <path d="M39 57h50l6 12H33l6-12Z" fill="#d92d20"/>
+  <circle cx="43" cy="75" r="10" fill="#f8fafc"/>
+  <circle cx="85" cy="75" r="10" fill="#f8fafc"/>
+  <circle cx="43" cy="75" r="5" fill="#111418"/>
+  <circle cx="85" cy="75" r="5" fill="#111418"/>
+  <path d="M35 96h58" stroke="#f8fafc" stroke-width="6" stroke-linecap="round"/>
+  <path d="M49 30h30" stroke="#f04438" stroke-width="6" stroke-linecap="round"/>
+</svg>

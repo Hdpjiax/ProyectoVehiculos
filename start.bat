@@ -11,5 +11,5 @@ cd server-js
 if not exist node_modules npm install
 if errorlevel 1 exit /b 1
 
-echo Iniciando MotorCasa en http://localhost:8080
+echo Iniciando ADDJ MOTORS en http://localhost:8080
 npm start
