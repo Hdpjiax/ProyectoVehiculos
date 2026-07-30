@@ -76,6 +76,39 @@ function descargarCsv(nombre, filas) {
   URL.revokeObjectURL(enlace.href);
 }
 
+function imprimirReporte(tipo) {
+  const esVentas = tipo === 'vendidos';
+  const titulo = esVentas ? 'Reporte de vehiculos vendidos' : 'Reporte de ofertas activas';
+  const origen = esVentas ? $('#listaVendidos') : $('#listaOfertasReporte');
+  if (!origen || !origen.textContent.trim()) return aviso('No hay datos para imprimir.');
+  const ventana = window.open('', '_blank', 'width=1000,height=700');
+  if (!ventana) return aviso('El navegador bloqueo la ventana de impresion.');
+  ventana.document.write(`<!doctype html>
+    <html lang="es-MX">
+    <head>
+      <meta charset="utf-8">
+      <title>${escapar(titulo)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; color: #111418; margin: 28px; }
+        h1 { font-size: 24px; margin: 0 0 6px; color: #a51f2b; }
+        .subtitulo { color: #66707a; margin: 0 0 22px; }
+        .fila-reporte { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid #d8ddde; break-inside: avoid; }
+        strong { display: block; font-size: 13px; }
+        .meta { display: block; color: #66707a; font-size: 11px; margin: 0 0 3px; }
+        a, button { display: none !important; }
+        @page { margin: 16mm; }
+      </style>
+    </head>
+    <body>
+      <h1>${escapar(titulo)}</h1>
+      <p class="subtitulo">MotorCasa - generado el ${new Date().toLocaleDateString('es-MX')}</p>
+      ${origen.innerHTML}
+      <script>window.onload = () => { window.print(); window.close(); };</script>
+    </body>
+    </html>`);
+  ventana.document.close();
+}
+
 async function cargarClientes() {
   clientes = await api('/api/clientes');
   renderClientes();
@@ -286,9 +319,13 @@ document.addEventListener('click', async e => {
   if (e.target.classList.contains('nuevo-registro')) limpiarFormulario(e.target.closest('form'));
   if (e.target.dataset.csv === 'ofertas') descargarCsv('ofertas-activas', ofertas);
   if (e.target.dataset.csv === 'vendidos') descargarCsv('vehiculos-vendidos', vendidos);
-  if (e.target.dataset.print !== undefined) window.print();
-  if (e.target.dataset.borrarCliente && confirm('Eliminar cliente?')) {
-    try { await api(`/api/clientes/${idCliente}`, { method: 'DELETE' }); await cargarTodo(); } catch (x) { aviso(x.message); }
+  if (e.target.dataset.print) imprimirReporte(e.target.dataset.print);
+  if (e.target.dataset.borrarCliente && confirm('Eliminar cliente? Si tiene vehiculos o ventas, solo se desactivara para conservar el historial.')) {
+    try {
+      const r = await api(`/api/clientes/${idCliente}`, { method: 'DELETE' });
+      await cargarTodo();
+      aviso(r.mensaje || 'Cliente actualizado.');
+    } catch (x) { aviso(x.message); }
   }
   if (e.target.dataset.borrarVehiculo && confirm('Eliminar vehiculo?')) {
     try { await api(`/api/vehiculos/${idVehiculo}`, { method: 'DELETE' }); await cargarTodo(); } catch (x) { aviso(x.message); }

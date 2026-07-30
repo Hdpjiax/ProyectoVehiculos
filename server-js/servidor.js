@@ -14,7 +14,7 @@ try {
 
 const puerto = Number(process.env.PORT || 8080);
 const raiz = path.join(__dirname, '..');
-const pool = mysql.createPool({ ...config, waitForConnections: true, connectionLimit: 10 });
+const pool = mysql.createPool({ ...config, charset: 'utf8mb4', waitForConnections: true, connectionLimit: 10 });
 
 function responder(res, estado, datos) {
   res.writeHead(estado, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -49,6 +49,28 @@ function requerido(datos, ...campos) {
 
 function positivo(valor, campo) {
   if (Number(valor) <= 0) throw new Error(`${campo} debe ser mayor a cero.`);
+}
+
+function texto(valor) {
+  return String(valor || '').trim().normalize('NFC');
+}
+
+function validarNombre(nombre, campo = 'nombre') {
+  const limpio = texto(nombre);
+  if (!/^[\p{L}\p{M}.' -]{2,150}$/u.test(limpio)) {
+    throw new Error(`${campo} solo debe contener letras, acentos, espacios, apostrofes, puntos o guiones.`);
+  }
+  return limpio;
+}
+
+function normalizarCliente(d) {
+  requerido(d, 'nombreCompleto', 'domicilio', 'correoElectronico', 'telefono');
+  return [
+    validarNombre(d.nombreCompleto, 'Nombre completo'),
+    texto(d.domicilio),
+    texto(d.correoElectronico).toLowerCase(),
+    texto(d.telefono)
+  ];
 }
 
 function enviarArchivo(res, archivo) {
@@ -143,26 +165,33 @@ function datosActaDesdeFila(fila) {
 
 async function clientes(req, res, ruta) {
   if (ruta === '/api/clientes' && req.method === 'GET') {
-    const [filas] = await pool.query('SELECT * FROM clientes ORDER BY nombre_completo');
+    const [filas] = await pool.query('SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre_completo');
     return responder(res, 200, filas);
   }
   if (ruta === '/api/clientes' && req.method === 'POST') {
     const d = await cuerpo(req);
-    requerido(d, 'nombreCompleto', 'domicilio', 'correoElectronico', 'telefono');
-    const [r] = await pool.execute('INSERT INTO clientes(nombre_completo, domicilio, correo_electronico, telefono) VALUES(?, ?, ?, ?)', [d.nombreCompleto, d.domicilio, d.correoElectronico, d.telefono]);
+    const datos = normalizarCliente(d);
+    const [r] = await pool.execute('INSERT INTO clientes(nombre_completo, domicilio, correo_electronico, telefono) VALUES(?, ?, ?, ?)', datos);
     return responder(res, 201, { id: r.insertId });
   }
   if (/^\/api\/clientes\/\d+$/.test(ruta)) {
     const id = ruta.split('/').pop();
     if (req.method === 'PUT') {
       const d = await cuerpo(req);
-      requerido(d, 'nombreCompleto', 'domicilio', 'correoElectronico', 'telefono');
-      await pool.execute('UPDATE clientes SET nombre_completo = ?, domicilio = ?, correo_electronico = ?, telefono = ? WHERE id_cliente = ?', [d.nombreCompleto, d.domicilio, d.correoElectronico, d.telefono, id]);
+      const datos = normalizarCliente(d);
+      await pool.execute('UPDATE clientes SET nombre_completo = ?, domicilio = ?, correo_electronico = ?, telefono = ?, activo = 1 WHERE id_cliente = ?', [...datos, id]);
       return responder(res, 200, { id });
     }
     if (req.method === 'DELETE') {
+      const [[relaciones]] = await pool.execute(`SELECT
+        (SELECT COUNT(*) FROM vehiculos WHERE id_vendedor = ?) AS vehiculos,
+        (SELECT COUNT(*) FROM ventas WHERE id_comprador = ?) AS ventas`, [id, id]);
+      if (Number(relaciones.vehiculos) || Number(relaciones.ventas)) {
+        await pool.execute('UPDATE clientes SET activo = 0 WHERE id_cliente = ?', [id]);
+        return responder(res, 200, { mensaje: 'Cliente desactivado; sus vehiculos y ventas historicas se conservan.' });
+      }
       await pool.execute('DELETE FROM clientes WHERE id_cliente = ?', [id]);
-      return responder(res, 200, { mensaje: 'Cliente eliminado' });
+      return responder(res, 200, { mensaje: 'Cliente eliminado.' });
     }
   }
 }
