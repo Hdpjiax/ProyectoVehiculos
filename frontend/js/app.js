@@ -1,5 +1,5 @@
 const $ = (selector) => document.querySelector(selector);
-let clientes = [], vehiculos = [], vendidos = [], ofertas = [], estadisticas = {};
+let clientes = [], clientesActivos = [], vehiculos = [], vendidos = [], ofertas = [], estadisticas = {};
 const moneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 
 async function api(ruta, opciones = {}) {
@@ -50,11 +50,11 @@ function cambiarVista(id = 'tablero') {
 }
 
 function opcionesCliente(seleccion = '') {
-  return `<option value="">Selecciona una persona</option>${clientes.map(c => `<option value="${c.id_cliente}" ${String(c.id_cliente) === String(seleccion) ? 'selected' : ''}>${escapar(c.nombre_completo)}</option>`).join('')}`;
+  return `<option value="">Selecciona una persona</option>${clientesActivos.map(c => `<option value="${c.id_cliente}" ${String(c.id_cliente) === String(seleccion) ? 'selected' : ''}>${escapar(c.nombre_completo)}</option>`).join('')}`;
 }
 
 function actualizarMetricas() {
-  $('#totalClientes').textContent = clientes.length;
+  $('#totalClientes').textContent = clientesActivos.length;
   $('#totalVendidos').textContent = estadisticas.vehiculos_vendidos ?? vendidos.length;
   $('#ingresosTotales').textContent = moneda.format(estadisticas.ingresos_totales || 0);
   $('#utilidadEstimada').textContent = moneda.format(estadisticas.utilidad_estimada || 0);
@@ -80,7 +80,25 @@ function imprimirReporte(tipo) {
   const esVentas = tipo === 'vendidos';
   const titulo = esVentas ? 'Reporte de vehiculos vendidos' : 'Reporte de ofertas activas';
   const origen = esVentas ? $('#listaVendidos') : $('#listaOfertasReporte');
-  if (!origen || !origen.textContent.trim()) return aviso('No hay datos para imprimir.');
+  if (esVentas && (!origen || !origen.textContent.trim())) return aviso('No hay datos para imprimir.');
+  if (!esVentas && !ofertas.length) return aviso('No hay ofertas para imprimir.');
+  const filas = esVentas ? vendidos : ofertas;
+  const contenido = filas.map(v => `
+    <article class="oferta-print">
+      <div class="imagen-wrap">
+        ${v.url_imagen ? `<img src="${escapar(v.url_imagen)}" alt="${escapar(v.marca)} ${escapar(v.linea)}">` : '<div class="sin-imagen">Sin imagen</div>'}
+      </div>
+      <div>
+        <h2>${escapar(v.marca)} ${escapar(v.linea)} ${v.modelo}</h2>
+        <p class="precio">${moneda.format(esVentas ? v.precio_final : v.precio_venta)}</p>
+        <p><strong>Vendedor:</strong> ${escapar(v.vendedor || '')}</p>
+        ${esVentas ? `<p><strong>Comprador:</strong> ${escapar(v.comprador || '')}</p>` : ''}
+        <p><strong>Serie:</strong> ${escapar(v.numero_serie || '')}</p>
+        <p><strong>Color:</strong> ${escapar(v.color || '')} · <strong>Transmision:</strong> ${escapar(v.transmision || '')} · <strong>Cilindros:</strong> ${escapar(v.numero_cilindros || '')}</p>
+        <p><strong>${esVentas ? 'Venta' : 'Publicado'}:</strong> ${fecha(esVentas ? v.fecha_venta : v.fecha_publicacion)}${esVentas ? ` · <strong>Pago:</strong> ${escapar(v.estatus_pago || '')}` : ''}</p>
+        <p>${escapar(v.descripcion || '')}</p>
+      </div>
+    </article>`).join('');
   const ventana = window.open('', '_blank', 'width=1000,height=700');
   if (!ventana) return aviso('El navegador bloqueo la ventana de impresion.');
   ventana.document.write(`<!doctype html>
@@ -93,7 +111,14 @@ function imprimirReporte(tipo) {
         h1 { font-size: 24px; margin: 0 0 6px; color: #a51f2b; }
         .subtitulo { color: #66707a; margin: 0 0 22px; }
         .fila-reporte { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid #d8ddde; break-inside: avoid; }
+        .oferta-print { display: grid; grid-template-columns: 180px 1fr; gap: 18px; padding: 16px 0; border-bottom: 1px solid #d8ddde; break-inside: avoid; page-break-inside: avoid; }
+        .oferta-print img, .sin-imagen { width: 180px; height: 120px; object-fit: cover; border: 1px solid #cfd5d8; background: #f3f4f1; }
+        .sin-imagen { display: grid; place-items: center; color: #66707a; font-size: 12px; }
+        .oferta-print h2 { margin: 0 0 6px; font-size: 18px; }
+        .oferta-print p { margin: 3px 0; font-size: 12px; }
+        .precio { color: #a51f2b; font-weight: 800; font-size: 15px !important; }
         strong { display: block; font-size: 13px; }
+        .oferta-print strong { display: inline; }
         .meta { display: block; color: #66707a; font-size: 11px; margin: 0 0 3px; }
         a, button { display: none !important; }
         @page { margin: 16mm; }
@@ -102,15 +127,28 @@ function imprimirReporte(tipo) {
     <body>
       <h1>${escapar(titulo)}</h1>
       <p class="subtitulo">MotorCasa - generado el ${new Date().toLocaleDateString('es-MX')}</p>
-      ${origen.innerHTML}
-      <script>window.onload = () => { window.print(); window.close(); };</script>
+      ${contenido}
+      <script>
+        window.onload = () => {
+          const imgs = Array.from(document.images);
+          const espera = imgs.map(img => img.complete ? Promise.resolve() : new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          }));
+          Promise.all(espera).then(() => setTimeout(() => window.print(), 350));
+        };
+      </script>
     </body>
     </html>`);
   ventana.document.close();
 }
 
 async function cargarClientes() {
-  clientes = await api('/api/clientes');
+  const estado = $('#filtroEstadoClientes')?.value || 'activos';
+  [clientesActivos, clientes] = await Promise.all([
+    api('/api/clientes?estado=activos'),
+    api(`/api/clientes?estado=${encodeURIComponent(estado)}`)
+  ]);
   renderClientes();
   document.querySelectorAll('select[name="idVendedor"],select[name="idComprador"]').forEach(s => s.innerHTML = opcionesCliente(s.value));
 }
@@ -122,12 +160,11 @@ function renderClientes() {
     <article class="item">
       <div>
         <strong>${escapar(c.nombre_completo)}</strong>
-        <p>${escapar(c.correo_electronico)} · ${escapar(c.telefono)}</p>
+        <p>${escapar(c.correo_electronico)} · ${escapar(c.telefono)} · <span class="${Number(c.activo) ? 'estado' : 'estado vendido'}">${Number(c.activo) ? 'ACTIVO' : 'INACTIVO'}</span></p>
         <p class="meta">${escapar(c.domicilio)}</p>
       </div>
       <div class="acciones">
-        <button class="enlace" data-editar-cliente="${c.id_cliente}">Editar</button>
-        <button class="enlace" data-borrar-cliente="${c.id_cliente}">Eliminar</button>
+        ${Number(c.activo) ? `<button class="enlace" data-editar-cliente="${c.id_cliente}">Editar</button><button class="enlace" data-borrar-cliente="${c.id_cliente}">Eliminar / desactivar</button>` : `<button class="enlace" data-reactivar-cliente="${c.id_cliente}">Reactivar</button>`}
       </div>
     </article>`).join('') : '<p class="meta">No hay clientes registrados.</p>';
 }
@@ -310,7 +347,7 @@ document.addEventListener('click', async e => {
   const tab = e.target.closest('[data-tab-link]');
   if (tab) cambiarVista(tab.dataset.tabLink);
 
-  const idCliente = e.target.dataset.editarCliente || e.target.dataset.borrarCliente;
+  const idCliente = e.target.dataset.editarCliente || e.target.dataset.borrarCliente || e.target.dataset.reactivarCliente;
   const idVehiculo = e.target.dataset.editarVehiculo || e.target.dataset.borrarVehiculo;
   if (e.target.dataset.editarCliente) editarCliente(Number(idCliente));
   if (e.target.dataset.editarVehiculo) editarVehiculo(Number(idVehiculo));
@@ -325,6 +362,13 @@ document.addEventListener('click', async e => {
       const r = await api(`/api/clientes/${idCliente}`, { method: 'DELETE' });
       await cargarTodo();
       aviso(r.mensaje || 'Cliente actualizado.');
+    } catch (x) { aviso(x.message); }
+  }
+  if (e.target.dataset.reactivarCliente && confirm('Reactivar este cliente para nuevos registros?')) {
+    try {
+      const r = await api(`/api/clientes/${idCliente}/reactivar`, { method: 'POST' });
+      await cargarTodo();
+      aviso(r.mensaje || 'Cliente reactivado.');
     } catch (x) { aviso(x.message); }
   }
   if (e.target.dataset.borrarVehiculo && confirm('Eliminar vehiculo?')) {
@@ -347,6 +391,7 @@ document.addEventListener('click', async e => {
 window.addEventListener('hashchange', () => cambiarVista(location.hash.replace('#', '') || 'tablero'));
 $('select[name="idVehiculo"]').addEventListener('change', e => $('#formVenta').precioFinal.value = e.target.selectedOptions[0]?.dataset.precio || '');
 $('#buscarClientes').addEventListener('input', renderClientes);
+$('#filtroEstadoClientes').addEventListener('change', () => cargarClientes().then(actualizarMetricas).catch(x => aviso(x.message)));
 
 async function cargarTodo() {
   try {

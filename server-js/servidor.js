@@ -165,7 +165,13 @@ function datosActaDesdeFila(fila) {
 
 async function clientes(req, res, ruta) {
   if (ruta === '/api/clientes' && req.method === 'GET') {
-    const [filas] = await pool.query('SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre_completo');
+    const estado = new URL(req.url, 'http://localhost').searchParams.get('estado') || 'activos';
+    const filtros = {
+      activos: 'WHERE activo = 1',
+      inactivos: 'WHERE activo = 0',
+      todos: ''
+    };
+    const [filas] = await pool.query(`SELECT * FROM clientes ${filtros[estado] ?? filtros.activos} ORDER BY activo DESC, nombre_completo`);
     return responder(res, 200, filas);
   }
   if (ruta === '/api/clientes' && req.method === 'POST') {
@@ -191,8 +197,13 @@ async function clientes(req, res, ruta) {
         return responder(res, 200, { mensaje: 'Cliente desactivado; sus vehiculos y ventas historicas se conservan.' });
       }
       await pool.execute('DELETE FROM clientes WHERE id_cliente = ?', [id]);
-      return responder(res, 200, { mensaje: 'Cliente eliminado.' });
+      return responder(res, 200, { mensaje: 'Cliente eliminado definitivamente porque no tenia historial.' });
     }
+  }
+  if (/^\/api\/clientes\/\d+\/reactivar$/.test(ruta) && req.method === 'POST') {
+    const id = ruta.split('/')[3];
+    await pool.execute('UPDATE clientes SET activo = 1 WHERE id_cliente = ?', [id]);
+    return responder(res, 200, { mensaje: 'Cliente reactivado.' });
   }
 }
 
