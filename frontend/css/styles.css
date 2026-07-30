@@ -620,6 +620,7 @@ textarea:focus {
 }
 
 @media print {
+
   .barra-lateral,
   .superior,
   .metricas,
@@ -648,6 +649,7 @@ textarea:focus {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
