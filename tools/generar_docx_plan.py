@@ -4,7 +4,7 @@ from html import escape
 
 ROOT = Path(__file__).resolve().parents[1]
 CAPTURAS = ROOT / "docs" / "capturas"
-OUT = ROOT / "output" / "Proyecto_integrador_MotorCasa_v3.docx"
+OUT = ROOT / "output" / "Proyecto_integrador_MotorCasa_v5.docx"
 
 
 def svg_capture(path, title, subtitle, blocks, accent="#a51f2b"):
@@ -88,44 +88,107 @@ def make_captures():
 
 
 def make_gantt():
-    weeks = ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"]
-    tasks = [
-        ("Analisis", "Requisitos y modelo inicial", 0, 1.0, "#334155"),
-        ("Diseno", "Modelo ER, relacional e interfaz", 1.0, 1.0, "#a51f2b"),
-        ("Desarrollo", "Base de datos y API", 2.0, 1.4, "#2563eb"),
-        ("Desarrollo", "Frontend, CRUD y catalogo", 3.0, 0.8, "#2563eb"),
-        ("Desarrollo", "Acta Java y reportes", 3.6, 0.7, "#2563eb"),
-        ("Pruebas", "Validacion y correcciones", 4.0, 0.6, "#1e7a52"),
-        ("Entrega", "Documentacion y capturas", 4.45, 0.55, "#c98d2b"),
+    weeks = [
+        ("SEMANA 1", "03-07 AGO"),
+        ("SEMANA 2", "10-14 AGO"),
+        ("SEMANA 3", "17-21 AGO"),
+        ("SEMANA 4", "24-28 AGO"),
+        ("SEMANA 5", "31 AGO-04 SEP"),
     ]
-    left, top, col, row = 260, 130, 170, 58
+    days = ["L", "M", "M", "J", "V"]
+    tasks = [
+        ("01", "Requisitos", "Analisis", "03/08", "07/08", 0, 4, "#334155"),
+        ("02", "Modelo ER / Relacional", "Diseno", "10/08", "11/08", 5, 2, "#a51f2b"),
+        ("03", "Interfaz por pestanas", "Diseno", "12/08", "14/08", 7, 3, "#c98d2b"),
+        ("04", "MySQL y migraciones", "Backend", "17/08", "19/08", 10, 3, "#2563eb"),
+        ("05", "API Node.js", "Backend", "20/08", "22/08", 13, 3, "#2563eb"),
+        ("06", "CRUD completo", "Frontend", "24/08", "26/08", 15, 3, "#1e7a52"),
+        ("07", "Ventas y acta Java", "Integracion", "27/08", "29/08", 18, 3, "#7c3aed"),
+        ("08", "Reportes y CSV", "Integracion", "28/08", "31/08", 19, 4, "#a51f2b"),
+        ("09", "Pruebas finales", "Calidad", "31/08", "03/09", 20, 4, "#0f766e"),
+        ("10", "Documentacion", "Entrega", "02/09", "04/09", 22, 3, "#c98d2b"),
+    ]
+    left, top, day_w, row_h = 520, 255, 38, 46
+    table_w = 25 * day_w
     grid = []
-    for i, w in enumerate(weeks):
-        x = left + i * col
-        grid.append(f'<rect x="{x}" y="82" width="{col}" height="430" fill="{ "#f8fafc" if i % 2 == 0 else "#eef2f4" }" stroke="#d7dde2"/>')
-        grid.append(f'<text x="{x + 22}" y="112" font-size="18" font-weight="700" fill="#111418">{w}</text>')
+    for i, (week, span) in enumerate(weeks):
+        x = left + i * day_w * 5
+        fill = "#f7f8f5" if i % 2 == 0 else "#eef2f4"
+        grid.append(f'<rect x="{x}" y="160" width="{day_w * 5}" height="68" fill="{fill}" stroke="#ccd3d8"/>')
+        grid.append(f'<text x="{x + 52}" y="188" text-anchor="middle" font-size="16" font-weight="800" fill="#111418">{week}</text>')
+        grid.append(f'<text x="{x + 52}" y="211" text-anchor="middle" font-size="12" font-weight="700" fill="#66707a">{span}</text>')
+        for d, label in enumerate(days):
+            dx = x + d * day_w
+            grid.append(f'<rect x="{dx}" y="228" width="{day_w}" height="28" fill="#ffffff" stroke="#d7dde2"/>')
+            grid.append(f'<text x="{dx + 19}" y="247" text-anchor="middle" font-size="12" font-weight="800" fill="#66707a">{label}</text>')
+    for d in range(26):
+        x = left + d * day_w
+        color = "#b7bec5" if d % 5 == 0 else "#e1e5e8"
+        width = 1.4 if d % 5 == 0 else 0.8
+        grid.append(f'<line x1="{x}" y1="{top}" x2="{x}" y2="{top + len(tasks) * row_h}" stroke="{color}" stroke-width="{width}"/>')
     bars = []
-    for i, (stage, label, start, dur, color) in enumerate(tasks):
-        y = top + i * row
-        x = left + start * col
-        width = dur * col
-        bars.append(f'<text x="48" y="{y + 26}" font-size="16" font-weight="700" fill="#111418">{stage}</text>')
-        bars.append(f'<text x="48" y="{y + 48}" font-size="13" fill="#64707a">{label}</text>')
-        bars.append(f'<rect x="{x}" y="{y}" width="{width}" height="34" rx="8" fill="{color}"/>')
-        bars.append(f'<text x="{x + 14}" y="{y + 23}" font-size="14" font-weight="700" fill="#ffffff">{label}</text>')
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650">
-      <rect width="1200" height="650" rx="18" fill="#ffffff"/>
-      <rect x="0" y="0" width="1200" height="70" fill="#111418"/>
-      <text x="42" y="44" font-size="28" font-weight="800" fill="#ffffff">Diagrama de Gantt - MotorCasa</text>
-      <text x="850" y="44" font-size="16" fill="#cfd5d8">Duracion total: 5 semanas</text>
-      <rect x="32" y="82" width="1110" height="430" rx="10" fill="#f8fafc" stroke="#d7dde2"/>
+    for i, (code, task, owner, start, end, offset, length, color) in enumerate(tasks):
+        y = top + i * row_h
+        stripe = "#ffffff" if i % 2 == 0 else "#f8faf9"
+        x = left + offset * day_w + 4
+        width = max(length * day_w - 8, 26)
+        bars.append(f'<rect x="44" y="{y}" width="1426" height="{row_h}" fill="{stripe}" stroke="#e1e5e8"/>')
+        bars.append(f'<text x="66" y="{y + 29}" font-size="15" font-weight="800" fill="#66707a">{code}</text>')
+        bars.append(f'<text x="116" y="{y + 29}" font-size="15" font-weight="800" fill="#111418">{escape(task)}</text>')
+        bars.append(f'<text x="332" y="{y + 29}" font-size="14" fill="#66707a">{escape(owner)}</text>')
+        bars.append(f'<text x="425" y="{y + 29}" text-anchor="middle" font-size="14" font-weight="700" fill="#111418">{start}</text>')
+        bars.append(f'<text x="480" y="{y + 29}" text-anchor="middle" font-size="14" font-weight="700" fill="#111418">{end}</text>')
+        bars.append(f'<rect x="{x}" y="{y + 10}" width="{width}" height="26" rx="7" fill="{color}"/>')
+        bars.append(f'<circle cx="{x + 12}" cy="{y + 23}" r="4" fill="#ffffff" opacity="0.9"/>')
+        if width > 95:
+            bars.append(f'<text x="{x + 24}" y="{y + 28}" font-size="12" font-weight="800" fill="#ffffff">{escape(task[:22])}</text>')
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="880" viewBox="0 0 1600 880">
+      <defs>
+        <linearGradient id="hero" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#111418"/>
+          <stop offset="0.55" stop-color="#20262d"/>
+          <stop offset="1" stop-color="#a51f2b"/>
+        </linearGradient>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+          <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#111418" flood-opacity="0.14"/>
+        </filter>
+      </defs>
+      <rect width="1600" height="880" fill="#eef0ec"/>
+      <rect x="0" y="0" width="1600" height="118" fill="url(#hero)"/>
+      <text x="54" y="54" font-size="18" font-weight="800" fill="#e7eaec">MOTORCASA</text>
+      <text x="54" y="94" font-size="38" font-weight="900" fill="#ffffff">DIAGRAMA DE GANTT SEMANAL</text>
+      <text x="1220" y="52" font-size="15" font-weight="800" fill="#ffffff">Proyecto integrador</text>
+      <text x="1220" y="82" font-size="15" fill="#f2d6da">Duracion total: 5 semanas</text>
+
+      <rect x="44" y="138" width="1426" height="635" rx="16" fill="#ffffff" filter="url(#shadow)"/>
+      <rect x="44" y="138" width="1426" height="70" rx="16" fill="#ffffff"/>
+      <text x="70" y="170" font-size="13" font-weight="800" fill="#66707a">NOMBRE DEL PROYECTO</text>
+      <text x="70" y="197" font-size="20" font-weight="900" fill="#111418">MotorCasa - Sistema de compra-venta de vehiculos</text>
+      <text x="620" y="170" font-size="13" font-weight="800" fill="#66707a">RESPONSABLE</text>
+      <text x="620" y="197" font-size="18" font-weight="800" fill="#111418">Equipo de desarrollo</text>
+      <text x="920" y="170" font-size="13" font-weight="800" fill="#66707a">INICIO</text>
+      <text x="920" y="197" font-size="18" font-weight="800" fill="#111418">03/08/2026</text>
+      <text x="1120" y="170" font-size="13" font-weight="800" fill="#66707a">FIN</text>
+      <text x="1120" y="197" font-size="18" font-weight="800" fill="#111418">04/09/2026</text>
+      <text x="1300" y="170" font-size="13" font-weight="800" fill="#66707a">ESTADO</text>
+      <rect x="1300" y="181" width="96" height="26" rx="13" fill="#eaf5ef"/>
+      <text x="1348" y="200" text-anchor="middle" font-size="13" font-weight="900" fill="#1e7a52">LISTO</text>
+
+      <rect x="44" y="228" width="1426" height="28" fill="#111418"/>
+      <text x="66" y="247" font-size="12" font-weight="900" fill="#ffffff">ID</text>
+      <text x="116" y="247" font-size="12" font-weight="900" fill="#ffffff">ACTIVIDAD</text>
+      <text x="332" y="247" font-size="12" font-weight="900" fill="#ffffff">ETAPA</text>
+      <text x="425" y="247" text-anchor="middle" font-size="12" font-weight="900" fill="#ffffff">INICIO</text>
+      <text x="480" y="247" text-anchor="middle" font-size="12" font-weight="900" fill="#ffffff">FIN</text>
       {''.join(grid)}
       {''.join(bars)}
-      <rect x="48" y="548" width="18" height="18" rx="4" fill="#334155"/><text x="76" y="562" font-size="15" fill="#334155">Analisis</text>
-      <rect x="180" y="548" width="18" height="18" rx="4" fill="#a51f2b"/><text x="208" y="562" font-size="15" fill="#334155">Diseno</text>
-      <rect x="300" y="548" width="18" height="18" rx="4" fill="#2563eb"/><text x="328" y="562" font-size="15" fill="#334155">Desarrollo</text>
-      <rect x="455" y="548" width="18" height="18" rx="4" fill="#1e7a52"/><text x="483" y="562" font-size="15" fill="#334155">Pruebas</text>
-      <rect x="585" y="548" width="18" height="18" rx="4" fill="#c98d2b"/><text x="613" y="562" font-size="15" fill="#334155">Entrega</text>
+      <rect x="44" y="790" width="20" height="20" rx="5" fill="#334155"/><text x="74" y="806" font-size="15" font-weight="700" fill="#334155">Analisis</text>
+      <rect x="180" y="790" width="20" height="20" rx="5" fill="#a51f2b"/><text x="210" y="806" font-size="15" font-weight="700" fill="#334155">Diseno</text>
+      <rect x="294" y="790" width="20" height="20" rx="5" fill="#2563eb"/><text x="324" y="806" font-size="15" font-weight="700" fill="#334155">Backend</text>
+      <rect x="430" y="790" width="20" height="20" rx="5" fill="#1e7a52"/><text x="460" y="806" font-size="15" font-weight="700" fill="#334155">Frontend</text>
+      <rect x="570" y="790" width="20" height="20" rx="5" fill="#7c3aed"/><text x="600" y="806" font-size="15" font-weight="700" fill="#334155">Integracion</text>
+      <rect x="730" y="790" width="20" height="20" rx="5" fill="#0f766e"/><text x="760" y="806" font-size="15" font-weight="700" fill="#334155">Calidad</text>
+      <rect x="858" y="790" width="20" height="20" rx="5" fill="#c98d2b"/><text x="888" y="806" font-size="15" font-weight="700" fill="#334155">Entrega</text>
     </svg>"""
     (CAPTURAS / "00-gantt-profesional.svg").write_text(svg, encoding="utf-8")
 
@@ -249,6 +312,91 @@ def table(headers, rows):
     return "".join(out)
 
 
+def gantt_editable_table():
+    tasks = [
+        ("01", "Requisitos", "Analisis", "03/08", "07/08", 0, 5, "334155"),
+        ("02", "Modelo ER", "Diseno", "10/08", "11/08", 5, 2, "A51F2B"),
+        ("03", "Interfaz", "Diseno", "12/08", "14/08", 7, 3, "C98D2B"),
+        ("04", "MySQL", "Backend", "17/08", "19/08", 10, 3, "2563EB"),
+        ("05", "API Node", "Backend", "20/08", "22/08", 13, 3, "2563EB"),
+        ("06", "CRUD", "Frontend", "24/08", "26/08", 15, 3, "1E7A52"),
+        ("07", "Ventas/Acta", "Integracion", "27/08", "29/08", 18, 3, "7C3AED"),
+        ("08", "Reportes", "Integracion", "28/08", "31/08", 19, 4, "A51F2B"),
+        ("09", "Pruebas", "Calidad", "31/08", "03/09", 20, 4, "0F766E"),
+        ("10", "Docs", "Entrega", "02/09", "04/09", 22, 3, "C98D2B"),
+    ]
+    weeks = ["SEM 1\n03-07 AGO", "SEM 2\n10-14 AGO", "SEM 3\n17-21 AGO", "SEM 4\n24-28 AGO", "SEM 5\n31 AGO-04 SEP"]
+    days = ["L", "M", "M", "J", "V"] * 5
+    widths = [430, 1620, 780, 580, 580] + [214] * 25
+
+    def run(text, bold=False, color="111418", size=14):
+        b = "<w:b/>" if bold else ""
+        parts = str(text).split("\n")
+        xml = f'<w:r><w:rPr>{b}<w:color w:val="{color}"/><w:sz w:val="{size}"/></w:rPr><w:t>{escape(parts[0])}</w:t></w:r>'
+        for part in parts[1:]:
+            xml += f'<w:r><w:br/><w:rPr>{b}<w:color w:val="{color}"/><w:sz w:val="{size}"/></w:rPr><w:t>{escape(part)}</w:t></w:r>'
+        return xml
+
+    def cell(text="", width=214, fill="FFFFFF", bold=False, color="111418", align="center", span=1, size=14):
+        grid = f'<w:gridSpan w:val="{span}"/>' if span > 1 else ""
+        tcw = width * span
+        return (
+            f'<w:tc><w:tcPr><w:tcW w:w="{tcw}" w:type="dxa"/>{grid}'
+            f'<w:shd w:fill="{fill}"/><w:vAlign w:val="center"/>'
+            '<w:tcMar><w:top w:w="70" w:type="dxa"/><w:left w:w="55" w:type="dxa"/>'
+            '<w:bottom w:w="70" w:type="dxa"/><w:right w:w="55" w:type="dxa"/></w:tcMar>'
+            '<w:tcBorders><w:top w:val="single" w:sz="4" w:color="D8DDDE"/>'
+            '<w:left w:val="single" w:sz="4" w:color="D8DDDE"/>'
+            '<w:bottom w:val="single" w:sz="4" w:color="D8DDDE"/>'
+            '<w:right w:val="single" w:sz="4" w:color="D8DDDE"/></w:tcBorders>'
+            f'</w:tcPr><w:p><w:pPr><w:jc w:val="{align}"/><w:spacing w:after="0"/></w:pPr>'
+            f'{run(text, bold, color, size)}</w:p></w:tc>'
+        )
+
+    grid_cols = "".join(f'<w:gridCol w:w="{w}"/>' for w in widths)
+    out = [
+        '<w:tbl><w:tblPr><w:tblW w:w="9340" w:type="dxa"/><w:tblLayout w:type="fixed"/>'
+        '<w:tblBorders><w:top w:val="single" w:sz="8" w:color="111418"/>'
+        '<w:left w:val="single" w:sz="4" w:color="BFC5C8"/><w:bottom w:val="single" w:sz="4" w:color="BFC5C8"/>'
+        '<w:right w:val="single" w:sz="4" w:color="BFC5C8"/><w:insideH w:val="single" w:sz="4" w:color="D8DDDE"/>'
+        '<w:insideV w:val="single" w:sz="4" w:color="D8DDDE"/></w:tblBorders></w:tblPr>',
+        f"<w:tblGrid>{grid_cols}</w:tblGrid>",
+    ]
+    out.append(
+        "<w:tr>"
+        + cell("PROYECTO", widths[0] + widths[1], "111418", True, "FFFFFF", "left", 2, 13)
+        + cell("MotorCasa", widths[2] + widths[3] + widths[4], "111418", True, "FFFFFF", "left", 3, 13)
+        + "".join(cell(w, 214, "A51F2B" if i % 2 == 0 else "20262D", True, "FFFFFF", "center", 5, 12) for i, w in enumerate(weeks))
+        + "</w:tr>"
+    )
+    out.append(
+        "<w:tr>"
+        + cell("ID", widths[0], "20262D", True, "FFFFFF", size=12)
+        + cell("ACTIVIDAD", widths[1], "20262D", True, "FFFFFF", "left", size=12)
+        + cell("ETAPA", widths[2], "20262D", True, "FFFFFF", size=12)
+        + cell("INICIO", widths[3], "20262D", True, "FFFFFF", size=12)
+        + cell("FIN", widths[4], "20262D", True, "FFFFFF", size=12)
+        + "".join(cell(d, 214, "EEF2F4", True, "334155", size=11) for d in days)
+        + "</w:tr>"
+    )
+    for idx, (code, task, owner, start, end, offset, length, color) in enumerate(tasks):
+        row_fill = "FFFFFF" if idx % 2 == 0 else "F8FAF9"
+        row = [
+            cell(code, widths[0], row_fill, True, "66707A", size=12),
+            cell(task, widths[1], row_fill, True, "111418", "left", size=13),
+            cell(owner, widths[2], row_fill, False, "66707A", size=12),
+            cell(start, widths[3], row_fill, True, "111418", size=12),
+            cell(end, widths[4], row_fill, True, "111418", size=12),
+        ]
+        for d in range(25):
+            active = offset <= d < offset + length
+            text = task if active and d == offset and length >= 3 else ""
+            row.append(cell(text, 214, color if active else row_fill, active, "FFFFFF" if active else "111418", size=9))
+        out.append("<w:tr>" + "".join(row) + "</w:tr>")
+    out.append("</w:tbl>")
+    return "".join(out)
+
+
 def image(rid, cx=5486400, cy=3254400):
     return f"""
     <w:p><w:pPr><w:spacing w:before="160" w:after="160"/></w:pPr><w:r><w:drawing>
@@ -341,7 +489,8 @@ def make_docx():
         ["Entrega", "Documentacion, evidencias, capturas y release", "5", "10 h"],
     ])]
     body += [heading("3. Diagrama de Gantt")]
-    body += [image(3, cx=6400800, cy=3467100)]
+    body += [p("Diagrama editable en Word basado en plantilla semanal: las actividades, fechas y colores se pueden modificar directamente desde la tabla.")]
+    body += [gantt_editable_table()]
     body += [table(["Actividad", "Inicio", "Duracion", "Dependencia"], [
         ["Requisitos del sistema", "03/08/2026", "2 dias", "Inicio"],
         ["Modelo de datos inicial", "05/08/2026", "3 dias", "Requisitos"],
@@ -410,7 +559,7 @@ def make_docx():
         ("06-acta.svg", "Acta de compraventa"),
         ("07-reportes.svg", "Reportes"),
     ]
-    rid = 4
+    rid = 3
     for filename, caption in names:
         body += [heading(caption, 2), image(rid)]
         rid += 1
@@ -428,8 +577,7 @@ def make_docx():
     doc_rels = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
     doc_rels.append('<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/08-er-modelo.svg"/>')
     doc_rels.append('<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/09-clases.svg"/>')
-    doc_rels.append('<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/00-gantt-profesional.svg"/>')
-    for i, (filename, _) in enumerate(names, 4):
+    for i, (filename, _) in enumerate(names, 3):
         doc_rels.append(f'<Relationship Id="rId{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/{filename}"/>')
     doc_rels.append('</Relationships>')
     styles = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -455,14 +603,12 @@ def make_docx():
         z.writestr("word/_rels/document.xml.rels", "".join(doc_rels))
         z.write(CAPTURAS / "08-er-modelo.svg", "word/media/08-er-modelo.svg")
         z.write(CAPTURAS / "09-clases.svg", "word/media/09-clases.svg")
-        z.write(CAPTURAS / "00-gantt-profesional.svg", "word/media/00-gantt-profesional.svg")
         for filename, _ in names:
             z.write(CAPTURAS / filename, f"word/media/{filename}")
 
 
 if __name__ == "__main__":
     make_captures()
-    make_gantt()
     make_model_diagrams()
     make_docx()
     print(OUT)
