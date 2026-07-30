@@ -30,6 +30,13 @@ function fecha(valor) {
   return valor ? new Date(valor.replace(' ', 'T')).toLocaleDateString('es-MX') : '';
 }
 
+function actualizarCamposAbono() {
+  const estado = $('#formVenta').estatusPago.value;
+  const grupo = $('#camposAbonoInicial');
+  grupo.hidden = estado === 'PAGADO';
+  $('#formVenta').montoAbono.required = estado === 'PENDIENTE' || estado === 'APARTADO';
+}
+
 function limpiarFormulario(formulario) {
   if (!formulario) return;
   formulario.reset();
@@ -96,6 +103,7 @@ function imprimirReporte(tipo) {
         <p><strong>Serie:</strong> ${escapar(v.numero_serie || '')}</p>
         <p><strong>Color:</strong> ${escapar(v.color || '')} · <strong>Transmision:</strong> ${escapar(v.transmision || '')} · <strong>Cilindros:</strong> ${escapar(v.numero_cilindros || '')}</p>
         <p><strong>${esVentas ? 'Venta' : 'Publicado'}:</strong> ${fecha(esVentas ? v.fecha_venta : v.fecha_publicacion)}${esVentas ? ` · <strong>Pago:</strong> ${escapar(v.estatus_pago || '')}` : ''}</p>
+        ${esVentas ? `<p><strong>Pagado:</strong> ${moneda.format(v.monto_pagado || 0)} · <strong>Saldo:</strong> ${moneda.format(v.saldo_pendiente || 0)}</p>` : ''}
         <p>${escapar(v.descripcion || '')}</p>
       </div>
     </article>`).join('');
@@ -228,10 +236,35 @@ async function cargarVendidos() {
       <div><span class="meta">Vendedor</span><strong>${escapar(v.vendedor)}</strong></div>
       <div><span class="meta">Comprador</span><strong>${escapar(v.comprador)}</strong></div>
       <div><span class="meta">Fecha</span><strong>${fecha(v.fecha_venta)}</strong></div>
-      <div><span class="meta">Total</span><strong>${moneda.format(v.precio_final)}</strong><p><span class="${v.estatus_pago === 'APARTADO' ? 'estado apartado' : estadoClase(v.estatus_pago === 'PENDIENTE' ? 'VENDIDO' : 'PUBLICADO')}">${escapar(v.estatus_pago || '')}</span></p>${v.ruta_acta ? `<a class="enlace" target="_blank" href="${escapar(v.ruta_acta)}">Acta</a>` : ''}<button class="enlace" data-regenerar-acta="${v.id_venta}">Regenerar</button><button class="enlace" data-cancelar-venta="${v.id_venta}">Cancelar</button></div>
+      <div><span class="meta">Pago</span><strong>${moneda.format(v.monto_pagado || 0)} / ${moneda.format(v.precio_final)}</strong><p class="meta">Saldo: ${moneda.format(v.saldo_pendiente || 0)}</p><p><span class="${v.estatus_pago === 'APARTADO' ? 'estado apartado' : estadoClase(v.estatus_pago === 'PENDIENTE' ? 'VENDIDO' : 'PUBLICADO')}">${escapar(v.estatus_pago || '')}</span></p>${v.ruta_acta ? `<a class="enlace" target="_blank" href="${escapar(v.ruta_acta)}">Acta</a>` : ''}<button class="enlace" data-ver-abonos="${v.id_venta}">Abonos</button><button class="enlace" data-regenerar-acta="${v.id_venta}">Regenerar</button><button class="enlace" data-cancelar-venta="${v.id_venta}">Cancelar</button></div>
     </article>`).join('');
   $('#listaVendidosResumen').innerHTML = resumen || '<p class="meta">Aun no hay ventas registradas.</p>';
   $('#listaVendidos').innerHTML = reporte || '<p class="meta">Aun no hay ventas registradas.</p>';
+}
+
+async function mostrarAbonos(idVenta) {
+  const venta = vendidos.find(v => Number(v.id_venta) === Number(idVenta));
+  const abonos = await api(`/api/ventas/${idVenta}/abonos`);
+  $('#detalleAbonos').innerHTML = `
+    <p class="etiqueta">CONTROL DE PAGOS</p>
+    <h2>${escapar(venta?.marca || '')} ${escapar(venta?.linea || '')} ${venta?.modelo || ''}</h2>
+    <p class="meta">Total: ${moneda.format(venta?.precio_final || 0)} · Pagado: ${moneda.format(venta?.monto_pagado || 0)} · Saldo: ${moneda.format(venta?.saldo_pendiente || 0)}</p>
+    <form id="formAbono" class="formulario">
+      <input type="hidden" name="idVenta" value="${idVenta}">
+      <label>Monto<input name="monto" type="number" min="0.01" step="0.01" max="${venta?.saldo_pendiente || ''}" required></label>
+      <label>Metodo de pago<select name="metodoPago">
+        <option value="EFECTIVO">Efectivo</option>
+        <option value="TRANSFERENCIA">Transferencia</option>
+        <option value="TARJETA">Tarjeta</option>
+        <option value="CHEQUE">Cheque</option>
+      </select></label>
+      <label>Observaciones<input name="observaciones" placeholder="Referencia, comentario o folio"></label>
+      <button class="boton primario" type="submit">Agregar abono</button>
+    </form>
+    <div class="lista">
+      ${abonos.length ? abonos.map(a => `<article class="item"><div><strong>${moneda.format(a.monto)}</strong><p>${escapar(a.metodo_pago)} · ${fecha(a.fecha_abono)}</p><p class="meta">${escapar(a.observaciones || '')}</p></div></article>`).join('') : '<p class="meta">No hay abonos registrados.</p>'}
+    </div>`;
+  if (!$('#modalAbonos').open) $('#modalAbonos').showModal();
 }
 
 function editarCliente(id) {
@@ -319,6 +352,7 @@ $('#formVenta').addEventListener('submit', async e => {
   const d = valor(e.currentTarget);
   const vehiculo = vehiculos.find(v => String(v.id_vehiculo) === String(d.idVehiculo));
   if (vehiculo && String(vehiculo.id_vendedor) === String(d.idComprador)) return aviso('Comprador y vendedor deben ser diferentes.');
+  if ((d.estatusPago === 'PENDIENTE' || d.estatusPago === 'APARTADO') && Number(d.montoAbono || 0) > Number(d.precioFinal)) return aviso('El monto pagado no puede ser mayor al precio final.');
   if (!confirm('Confirmar registro de venta? El vehiculo pasara a vendido.')) return;
   try {
     const resultado = await api('/api/ventas', { method: 'POST', body: JSON.stringify(d) });
@@ -353,6 +387,7 @@ document.addEventListener('click', async e => {
   if (e.target.dataset.editarVehiculo) editarVehiculo(Number(idVehiculo));
   if (e.target.dataset.detalleVehiculo) mostrarDetalleVehiculo(Number(e.target.dataset.detalleVehiculo));
   if (e.target.dataset.cerrarModal !== undefined) $('#modalDetalle').close();
+  if (e.target.dataset.cerrarAbonos !== undefined) $('#modalAbonos').close();
   if (e.target.classList.contains('nuevo-registro')) limpiarFormulario(e.target.closest('form'));
   if (e.target.dataset.csv === 'ofertas') descargarCsv('ofertas-activas', ofertas);
   if (e.target.dataset.csv === 'vendidos') descargarCsv('vehiculos-vendidos', vendidos);
@@ -385,11 +420,27 @@ document.addEventListener('click', async e => {
       if (resultado.acta) window.open(resultado.acta, '_blank');
     } catch (x) { aviso(x.message); }
   }
+  if (e.target.dataset.verAbonos) {
+    try { await mostrarAbonos(e.target.dataset.verAbonos); } catch (x) { aviso(x.message); }
+  }
   if (e.target.classList.contains('cancelar')) limpiarFormulario(e.target.closest('form'));
+});
+
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'formAbono') return;
+  e.preventDefault();
+  const d = valor(e.target);
+  try {
+    const r = await api(`/api/ventas/${d.idVenta}/abonos`, { method: 'POST', body: JSON.stringify(d) });
+    await cargarTodo();
+    await mostrarAbonos(d.idVenta);
+    aviso(r.mensaje || 'Abono registrado.');
+  } catch (x) { aviso(x.message); }
 });
 
 window.addEventListener('hashchange', () => cambiarVista(location.hash.replace('#', '') || 'tablero'));
 $('select[name="idVehiculo"]').addEventListener('change', e => $('#formVenta').precioFinal.value = e.target.selectedOptions[0]?.dataset.precio || '');
+$('select[name="estatusPago"]').addEventListener('change', actualizarCamposAbono);
 $('#buscarClientes').addEventListener('input', renderClientes);
 $('#filtroEstadoClientes').addEventListener('change', () => cargarClientes().then(actualizarMetricas).catch(x => aviso(x.message)));
 
@@ -408,4 +459,5 @@ async function cargarTodo() {
 }
 
 cambiarVista(location.hash.replace('#', '') || 'tablero');
+actualizarCamposAbono();
 cargarTodo();

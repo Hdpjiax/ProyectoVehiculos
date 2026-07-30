@@ -49,6 +49,17 @@ CREATE TABLE IF NOT EXISTS ventas (
   CONSTRAINT chk_precio_final CHECK (precio_final > 0)
 );
 
+CREATE TABLE IF NOT EXISTS abonos_venta (
+  id_abono INT AUTO_INCREMENT PRIMARY KEY,
+  id_venta INT NOT NULL,
+  fecha_abono DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  monto DECIMAL(12,2) NOT NULL,
+  metodo_pago VARCHAR(40) NOT NULL DEFAULT 'EFECTIVO',
+  observaciones VARCHAR(255),
+  CONSTRAINT fk_abono_venta FOREIGN KEY (id_venta) REFERENCES ventas(id_venta) ON DELETE CASCADE,
+  CONSTRAINT chk_abono_monto CHECK (monto > 0)
+);
+
 SET @sql := (
   SELECT IF(
     COUNT(*) = 0,

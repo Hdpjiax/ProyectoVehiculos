@@ -51,6 +51,10 @@ function positivo(valor, campo) {
   if (Number(valor) <= 0) throw new Error(`${campo} debe ser mayor a cero.`);
 }
 
+function monto(valor) {
+  return Number(valor || 0);
+}
+
 function texto(valor) {
   return String(valor || '').trim().normalize('NFC');
 }
@@ -262,6 +266,13 @@ async function ventas(req, res, ruta) {
       if (!comprador) throw new Error('El comprador no existe.');
       const [r] = await conexion.execute('INSERT INTO ventas(id_vehiculo, id_comprador, precio_final, estatus_pago) VALUES(?, ?, ?, ?)', [d.idVehiculo, d.idComprador, d.precioFinal, d.estatusPago || 'PAGADO']);
       idVenta = r.insertId;
+      if ((d.estatusPago === 'PENDIENTE' || d.estatusPago === 'APARTADO') && monto(d.montoAbono) > 0) {
+        if (monto(d.montoAbono) > monto(d.precioFinal)) throw new Error('El abono no puede ser mayor al precio final.');
+        await conexion.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, observaciones) VALUES(?, ?, ?, ?)', [idVenta, d.montoAbono, d.metodoPago || 'EFECTIVO', d.observacionAbono || 'Abono inicial']);
+      }
+      if (d.estatusPago === 'PAGADO') {
+        await conexion.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, observaciones) VALUES(?, ?, ?, ?)', [idVenta, d.precioFinal, d.metodoPago || 'EFECTIVO', 'Pago total al registrar la venta']);
+      }
       await conexion.execute("UPDATE vehiculos SET estado = 'VENDIDO' WHERE id_vehiculo = ?", [d.idVehiculo]);
       datosActa = {
         idVehiculo: v.id_vehiculo, numeroMotor: v.numero_motor, numeroSerie: v.numero_serie, modelo: v.modelo,
@@ -307,6 +318,28 @@ async function ventas(req, res, ruta) {
       conexion.release();
     }
   }
+  if (/^\/api\/ventas\/\d+\/abonos$/.test(ruta) && req.method === 'GET') {
+    const id = ruta.split('/')[3];
+    const [filas] = await pool.execute('SELECT * FROM abonos_venta WHERE id_venta = ? ORDER BY fecha_abono DESC, id_abono DESC', [id]);
+    return responder(res, 200, filas);
+  }
+  if (/^\/api\/ventas\/\d+\/abonos$/.test(ruta) && req.method === 'POST') {
+    const id = ruta.split('/')[3];
+    const d = await cuerpo(req);
+    positivo(d.monto, 'Monto del abono');
+    const [[venta]] = await pool.execute(`SELECT ven.*, COALESCE(SUM(a.monto), 0) AS abonado
+      FROM ventas ven LEFT JOIN abonos_venta a ON a.id_venta = ven.id_venta
+      WHERE ven.id_venta = ?
+      GROUP BY ven.id_venta`, [id]);
+    if (!venta) throw new Error('La venta no existe.');
+    const nuevoTotal = monto(venta.abonado) + monto(d.monto);
+    if (nuevoTotal > monto(venta.precio_final)) throw new Error('El total abonado no puede superar el precio final.');
+    await pool.execute('INSERT INTO abonos_venta(id_venta, monto, metodo_pago, observaciones) VALUES(?, ?, ?, ?)', [id, d.monto, d.metodoPago || 'EFECTIVO', d.observaciones || '']);
+    if (nuevoTotal >= monto(venta.precio_final)) {
+      await pool.execute("UPDATE ventas SET estatus_pago = 'PAGADO' WHERE id_venta = ?", [id]);
+    }
+    return responder(res, 201, { mensaje: 'Abono registrado.', abonado: nuevoTotal, saldo: monto(venta.precio_final) - nuevoTotal });
+  }
   if (/^\/api\/ventas\/\d+\/acta$/.test(ruta) && req.method === 'POST') {
     const id = ruta.split('/')[3];
     const [filas] = await pool.execute(`SELECT ven.*, v.*,
@@ -332,7 +365,17 @@ async function reportes(req, res, ruta, url) {
     return responder(res, 200, filas);
   }
   if (ruta === '/api/reportes/vendidos' && req.method === 'GET') {
-    const [filas] = await pool.query('SELECT ven.id_venta, v.*, ven.fecha_venta, ven.precio_final, ven.estatus_pago, ven.ruta_acta, cv.nombre_completo AS vendedor, cc.nombre_completo AS comprador FROM ventas ven JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo JOIN clientes cv ON cv.id_cliente = v.id_vendedor JOIN clientes cc ON cc.id_cliente = ven.id_comprador ORDER BY ven.fecha_venta DESC');
+    const [filas] = await pool.query(`SELECT ven.id_venta, v.*, ven.fecha_venta, ven.precio_final, ven.estatus_pago, ven.ruta_acta,
+      COALESCE(SUM(a.monto), 0) AS monto_pagado,
+      ven.precio_final - COALESCE(SUM(a.monto), 0) AS saldo_pendiente,
+      cv.nombre_completo AS vendedor, cc.nombre_completo AS comprador
+      FROM ventas ven
+      JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo
+      JOIN clientes cv ON cv.id_cliente = v.id_vendedor
+      JOIN clientes cc ON cc.id_cliente = ven.id_comprador
+      LEFT JOIN abonos_venta a ON a.id_venta = ven.id_venta
+      GROUP BY ven.id_venta
+      ORDER BY ven.fecha_venta DESC`);
     return responder(res, 200, filas);
   }
   if (ruta === '/api/reportes/estadisticas' && req.method === 'GET') {
@@ -345,6 +388,28 @@ async function reportes(req, res, ruta, url) {
       FROM vehiculos`);
     return responder(res, 200, datos);
   }
+}
+
+async function servirActa(res, rutaActa) {
+  const archivo = resolverArchivoPublico(rutaActa);
+  if (fs.existsSync(archivo)) {
+    enviarArchivo(res, archivo);
+    return true;
+  }
+  const [filas] = await pool.execute(`SELECT ven.*, v.*,
+    cv.nombre_completo AS vendedor, cv.domicilio AS domicilio_vendedor, cv.correo_electronico AS correo_vendedor, cv.telefono AS telefono_vendedor,
+    cc.nombre_completo AS comprador, cc.domicilio AS domicilio_comprador, cc.correo_electronico AS correo_comprador, cc.telefono AS telefono_comprador
+    FROM ventas ven
+    JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo
+    JOIN clientes cv ON cv.id_cliente = v.id_vendedor
+    JOIN clientes cc ON cc.id_cliente = ven.id_comprador
+    WHERE ven.ruta_acta = ?`, [rutaActa]);
+  if (!filas.length) return responder(res, 404, { error: 'Archivo no encontrado.' });
+  const nuevoArchivo = generarActa(datosActaDesdeFila(filas[0]));
+  const nuevaRuta = `/actas/${nuevoArchivo}`;
+  await pool.execute('UPDATE ventas SET ruta_acta = ? WHERE id_venta = ?', [nuevaRuta, filas[0].id_venta]);
+  enviarArchivo(res, path.join(raiz, nuevaRuta));
+  return true;
 }
 
 async function api(req, res, url) {
@@ -361,6 +426,7 @@ http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
+    if (url.pathname.startsWith('/actas/')) return await servirActa(res, url.pathname);
     const archivo = resolverArchivoPublico(url.pathname);
     if (!archivo.startsWith(raiz)) return responder(res, 403, { error: 'Acceso denegado' });
     enviarArchivo(res, archivo);

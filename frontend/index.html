@@ -208,6 +208,16 @@
                 <option value="PENDIENTE">Pendiente</option>
                 <option value="APARTADO">Apartado</option>
               </select></label>
+            <div id="camposAbonoInicial" class="grupo-abono" hidden>
+              <label>Monto pagado<input name="montoAbono" type="number" min="0" step="0.01" placeholder="0.00"></label>
+              <label>Metodo de pago<select name="metodoPago">
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                  <option value="TARJETA">Tarjeta</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select></label>
+              <label>Observacion del abono<input name="observacionAbono" placeholder="Ej. Anticipo inicial"></label>
+            </div>
             <label>Lugar de celebracion<input name="lugar" value="Morelia, Michoacan." required></label>
             <button class="boton primario" type="submit">Registrar venta y generar acta</button>
           </form>
@@ -254,6 +264,13 @@
     <div class="modal-contenido">
       <button class="enlace modal-cerrar" type="button" data-cerrar-modal>Cerrar</button>
       <div id="detalleVehiculo"></div>
+    </div>
+  </dialog>
+
+  <dialog id="modalAbonos" class="modal">
+    <div class="modal-contenido">
+      <button class="enlace modal-cerrar" type="button" data-cerrar-abonos>Cerrar</button>
+      <div id="detalleAbonos"></div>
     </div>
   </dialog>
 
