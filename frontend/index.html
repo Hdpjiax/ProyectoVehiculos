@@ -53,6 +53,14 @@
           <span>Vendidos</span>
           <strong id="totalVendidos">0</strong>
         </article>
+        <article class="metrica">
+          <span>Ingresos</span>
+          <strong id="ingresosTotales">$0</strong>
+        </article>
+        <article class="metrica">
+          <span>Utilidad estimada</span>
+          <strong id="utilidadEstimada">$0</strong>
+        </article>
       </div>
 
       <section class="panel hero-operativo">
@@ -78,10 +86,28 @@
         </div>
         <form id="filtroVehiculos" class="filtros">
           <label>Marca<input name="marca" placeholder="Ej. Nissan"></label>
+          <label>Linea<input name="linea" placeholder="Ej. Versa"></label>
           <label>Modelo<input name="modelo" type="number" placeholder="2020"></label>
+          <label>Color<input name="color" placeholder="Blanco"></label>
+          <label>Transmision<select name="transmision">
+              <option value="">Todas</option>
+              <option value="AUTOMATICA">Automatica</option>
+              <option value="ESTANDAR">Estandar</option>
+            </select></label>
+          <label>Cilindros<input name="cilindros" type="number" min="1" placeholder="4"></label>
+          <label>Nacionalidad<input name="nacionalidad" placeholder="Mexicana"></label>
           <label>Precio desde<input name="precioMin" type="number" min="0" placeholder="100000"></label>
           <label>Precio hasta<input name="precioMax" type="number" min="0" placeholder="250000"></label>
           <label>Fecha<input name="fecha" type="date"></label>
+          <label>Orden<select name="orden">
+              <option value="fecha_desc">Mas recientes</option>
+              <option value="fecha_asc">Mas antiguas</option>
+              <option value="precio_asc">Precio menor</option>
+              <option value="precio_desc">Precio mayor</option>
+              <option value="modelo_desc">Modelo nuevo</option>
+              <option value="modelo_asc">Modelo viejo</option>
+            </select></label>
+          <label>Limite<input name="limite" type="number" min="1" max="100" placeholder="20"></label>
           <button class="boton" type="submit">Buscar</button>
           <button class="enlace" type="reset">Limpiar</button>
         </form>
@@ -101,7 +127,8 @@
             <label>Correo electronico<input name="correoElectronico" type="email" required></label>
             <label>Telefono<input name="telefono" inputmode="tel" required></label>
             <div class="acciones-form">
-              <button class="boton primario" type="submit">Guardar cliente</button>
+              <button class="boton primario" type="submit" data-texto-base="Guardar cliente">Guardar cliente</button>
+              <button class="boton fantasma nuevo-registro" type="button">Nuevo registro</button>
               <button class="enlace cancelar" type="button">Cancelar</button>
             </div>
           </form>
@@ -111,6 +138,7 @@
             <h2>Personas registradas</h2>
             <span class="contador" id="contadorClientes">0</span>
           </div>
+          <label class="busqueda-lista">Buscar cliente<input id="buscarClientes" placeholder="Nombre, correo o telefono"></label>
           <div id="listaClientes" class="lista"></div>
         </section>
       </div>
@@ -139,10 +167,12 @@
             <label>Nacionalidad<input name="nacionalidad" required></label>
             <label>Precio de compra<input name="precioCompra" type="number" min="0" step="0.01" required></label>
             <label>Precio de venta<input name="precioVenta" type="number" min="0.01" step="0.01" required></label>
+            <label class="ancho-total">URL de imagen<input name="urlImagen" type="url" placeholder="https://..."></label>
             <label class="ancho-total">Descripcion<textarea name="descripcion" required></textarea></label>
             <label class="ancho-total">Observaciones<textarea name="observaciones"></textarea></label>
             <div class="acciones-form ancho-total">
-              <button class="boton primario" type="submit">Publicar vehiculo</button>
+              <button class="boton primario" type="submit" data-texto-base="Publicar vehiculo">Publicar vehiculo</button>
+              <button class="boton fantasma nuevo-registro" type="button">Nuevo registro</button>
               <button class="enlace cancelar" type="button">Cancelar</button>
             </div>
           </form>
@@ -166,6 +196,12 @@
             <label>Vehiculo publicado<select name="idVehiculo" required></select></label>
             <label>Comprador<select name="idComprador" required></select></label>
             <label>Precio final<input name="precioFinal" type="number" min="0.01" step="0.01" required></label>
+            <label>Estatus de pago<select name="estatusPago" required>
+                <option value="PAGADO">Pagado</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="APARTADO">Apartado</option>
+              </select></label>
+            <label>Lugar de celebracion<input name="lugar" value="Ciudad de Mexico" required></label>
             <button class="boton primario" type="submit">Registrar venta y generar acta</button>
           </form>
           <div id="acta" class="acta" hidden></div>
@@ -184,6 +220,10 @@
             <p class="etiqueta">REPORTES</p>
             <h2>Ofertas activas por fecha</h2>
           </div>
+          <div class="acciones">
+            <button class="boton" type="button" data-csv="ofertas">CSV</button>
+            <button class="boton" type="button" data-print>Imprimir</button>
+          </div>
         </div>
         <div id="listaOfertasReporte" class="tabla-lista"></div>
       </section>
@@ -193,11 +233,22 @@
             <p class="etiqueta">HISTORIAL</p>
             <h2>Vehiculos vendidos</h2>
           </div>
+          <div class="acciones">
+            <button class="boton" type="button" data-csv="vendidos">CSV</button>
+            <button class="boton" type="button" data-print>Imprimir</button>
+          </div>
         </div>
         <div id="listaVendidos" class="tabla-lista"></div>
       </section>
     </section>
   </main>
+
+  <dialog id="modalDetalle" class="modal">
+    <div class="modal-contenido">
+      <button class="enlace modal-cerrar" type="button" data-cerrar-modal>Cerrar</button>
+      <div id="detalleVehiculo"></div>
+    </div>
+  </dialog>
 
   <div id="mensaje" class="mensaje" role="status" aria-live="polite"></div>
   <script src="js/app.js"></script>

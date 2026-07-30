@@ -173,7 +173,7 @@ a {
 
 .metricas {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
@@ -275,7 +275,7 @@ a {
 }
 
 .filtros {
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto auto;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   align-items: end;
   padding: 14px;
   margin-bottom: 18px;
@@ -396,6 +396,15 @@ textarea:focus {
   padding: 18px;
 }
 
+.tarjeta-imagen {
+  width: calc(100% + 36px);
+  height: 150px;
+  margin: -18px -18px 16px;
+  object-fit: cover;
+  background: #d9ded8;
+  display: block;
+}
+
 .tarjeta::before {
   content: "";
   position: absolute;
@@ -459,6 +468,11 @@ textarea:focus {
   background: rgba(165, 31, 43, .12);
 }
 
+.estado.apartado {
+  color: #8a5a00;
+  background: rgba(201, 141, 43, .18);
+}
+
 .contador {
   min-width: 32px;
   min-height: 32px;
@@ -481,6 +495,52 @@ textarea:focus {
   margin-top: 16px;
   padding: 16px;
   background: #f8f1e7;
+}
+
+.busqueda-lista {
+  margin-bottom: 14px;
+}
+
+.modal {
+  width: min(760px, calc(100vw - 32px));
+  border: 0;
+  border-radius: var(--radio);
+  padding: 0;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .24);
+}
+
+.modal::backdrop {
+  background: rgba(17, 20, 24, .62);
+}
+
+.modal-contenido {
+  padding: 24px;
+}
+
+.modal-cerrar {
+  float: right;
+}
+
+.detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.detalle-grid div {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 10px;
+  background: #f8f9f6;
+}
+
+.detalle-grid span {
+  display: block;
+  color: var(--texto-suave);
+  font-size: .75rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .mensaje {
@@ -556,6 +616,34 @@ textarea:focus {
   .item,
   .superior-acciones {
     display: grid;
+  }
+}
+
+@media print {
+  .barra-lateral,
+  .superior,
+  .metricas,
+  .hero-operativo,
+  .filtros,
+  .acciones,
+  .mensaje,
+  .modal {
+    display: none !important;
+  }
+
+  .app {
+    margin: 0;
+    padding: 0;
+  }
+
+  .vista {
+    display: block;
+  }
+
+  .panel {
+    box-shadow: none;
+    border: 1px solid #999;
+    break-inside: avoid;
   }
 }
 

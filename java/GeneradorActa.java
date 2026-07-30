@@ -1,5 +1,3 @@
-package mx.edu.prepa.autos;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -9,8 +7,8 @@ import java.nio.file.Path;
 /** Genera el acta usando objetos de las clases Cliente y Vehiculo. */
 public class GeneradorActa {
     public static void main(String[] datos) throws IOException {
-        if (datos.length != 24)
-            throw new IllegalArgumentException("Se esperaban 24 datos para el acta.");
+        if (datos.length != 25)
+            throw new IllegalArgumentException("Se esperaban 25 datos para el acta.");
         int idVehiculo = Integer.parseInt(datos[0]);
         Vehiculo vehiculo = new Vehiculo(idVehiculo, datos[2], Integer.parseInt(datos[3]), datos[4], datos[5],
                 datos[6]);
@@ -18,8 +16,10 @@ public class GeneradorActa {
         BigDecimal precioFinal = new BigDecimal(datos[8]);
         Cliente vendedor = new Cliente(0, datos[14], datos[15], datos[16], datos[17]);
         Cliente comprador = new Cliente(0, datos[18], datos[19], datos[20], datos[21]);
-        String fecha = limpiar(datos[22]);
-        String archivo = datos[23];
+        String lugar = limpiar(datos[22]);
+        String fecha = limpiar(datos[23]);
+        String archivo = datos[24];
+        String montoLetra = limpiar(montoEnLetra(precioFinal));
         String vehiculoTexto = limpiar(vehiculo.getMarca()) + " " + limpiar(vehiculo.getLinea()) + " modelo "
                 + vehiculo.getModelo();
         String html = "<!doctype html><html lang='es'><head><meta charset='utf-8'><title>Acta de compraventa</title>"
@@ -34,9 +34,11 @@ public class GeneradorActa {
                 + "@media print{body{background:white;padding:0}.hoja{box-shadow:none;border:0}.no-print{display:none}}"
                 + "</style></head><body><main class='hoja'>"
                 + "<section class='membrete'><div><div class='marca'>MOTORCASA</div><div>Agencia de autos usados</div></div><div class='folio'><b>Folio:</b> ACTA-"
-                + idVehiculo + "-" + System.currentTimeMillis() + "<br><b>Fecha:</b> " + fecha + "</div></section>"
+                + idVehiculo + "-" + System.currentTimeMillis() + "<br><b>Lugar:</b> " + lugar + "<br><b>Fecha:</b> "
+                + fecha + "</div></section>"
                 + "<h1>ACTA DE COMPRAVENTA DE VEHÍCULO</h1>"
-                + "<p>En la fecha indicada, comparecen por una parte <b>" + limpiar(vendedor.getNombreCompleto())
+                + "<p>En " + lugar + ", en la fecha indicada, comparecen por una parte <b>"
+                + limpiar(vendedor.getNombreCompleto())
                 + "</b>, en lo sucesivo <b>EL VENDEDOR</b>, y por la otra <b>"
                 + limpiar(comprador.getNombreCompleto())
                 + "</b>, en lo sucesivo <b>EL COMPRADOR</b>, quienes manifiestan su voluntad de celebrar la presente compraventa de vehículo.</p>"
@@ -52,6 +54,7 @@ public class GeneradorActa {
                 + "<tr><th>Observaciones</th><td>" + limpiar(datos[13]) + "</td></tr>"
                 + "<tr><th>Precio de compra registrado</th><td>$" + precioCompra + " MXN</td></tr>"
                 + "<tr><th>Precio final</th><td>$" + precioFinal + " MXN</td></tr>"
+                + "<tr><th>Monto en letra</th><td>" + montoLetra + "</td></tr>"
                 + "</table>"
                 + "<h2>DATOS DEL VENDEDOR</h2><table class='datos'>"
                 + "<tr><th>Nombre completo</th><td>" + limpiar(vendedor.getNombreCompleto()) + "</td></tr>"
@@ -81,6 +84,41 @@ public class GeneradorActa {
     }
 
     private static String limpiar(String texto) {
-        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return texto == null ? "" : texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    private static String montoEnLetra(BigDecimal monto) {
+        long pesos = monto.longValue();
+        int centavos = monto.remainder(BigDecimal.ONE).movePointRight(2).abs().intValue();
+        return numero(pesos).toUpperCase() + " PESOS " + String.format("%02d", centavos) + "/100 M.N.";
+    }
+
+    private static String numero(long n) {
+        if (n == 0) return "cero";
+        if (n < 0) return "menos " + numero(-n);
+        if (n < 1000) return cientos((int) n);
+        if (n < 1_000_000) {
+            long miles = n / 1000, resto = n % 1000;
+            String prefijo = miles == 1 ? "mil" : numero(miles) + " mil";
+            return resto == 0 ? prefijo : prefijo + " " + cientos((int) resto);
+        }
+        long millones = n / 1_000_000, resto = n % 1_000_000;
+        String prefijo = millones == 1 ? "un millon" : numero(millones) + " millones";
+        return resto == 0 ? prefijo : prefijo + " " + numero(resto);
+    }
+
+    private static String cientos(int n) {
+        String[] unidades = {"", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve",
+                "diez", "once", "doce", "trece", "catorce", "quince", "dieciseis", "diecisiete", "dieciocho",
+                "diecinueve", "veinte", "veintiuno", "veintidos", "veintitres", "veinticuatro", "veinticinco",
+                "veintiseis", "veintisiete", "veintiocho", "veintinueve"};
+        String[] decenas = {"", "", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta",
+                "ochenta", "noventa"};
+        String[] centenas = {"", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos",
+                "seiscientos", "setecientos", "ochocientos", "novecientos"};
+        if (n == 100) return "cien";
+        if (n < 30) return unidades[n];
+        if (n < 100) return decenas[n / 10] + (n % 10 == 0 ? "" : " y " + unidades[n % 10]);
+        return centenas[n / 100] + (n % 100 == 0 ? "" : " " + cientos(n % 100));
     }
 }

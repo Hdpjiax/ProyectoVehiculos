@@ -1,46 +1,62 @@
-# ProyectoVehiculos - Sistema de compra-venta de vehículos
+# MotorCasa - Sistema de compra-venta de vehiculos
 
-Proyecto escolar para administrar clientes, vehículos publicados y ventas de una agencia de autos usados.
-
-## Tecnologías
-
-- Java 17 básico: clases, encapsulamiento, constructores, getters y setters. Solo genera el acta de compraventa.
-- HTML, CSS y JavaScript puro (`fetch`) para la interfaz.
-- Node.js (JavaScript) y MySQL 8 para el CRUD, consultas y reportes.
+Proyecto escolar para administrar clientes, vehiculos publicados, ventas, reportes y actas de compraventa.
 
 ## Requisitos
 
-- JDK 17.
+- JDK 17 con `java` y `javac` disponibles.
 - Node.js 20 o superior.
 - MySQL 8.
 
-## Puesta en marcha
+## Configuracion
 
-1. Cree la base y las tablas ejecutando, en orden, los archivos de `database/migrations/`.
-2. Opcionalmente cargue ejemplos con `database/seeds/001_datos_demo.sql`.
-3. Copie `server-js/database.config.example.js` como `server-js/database.local.js` y ajuste usuario y contraseña. Este archivo no se versiona.
-4. Compile Java: en Windows ejecute `java\\compilar.bat`; en macOS/Linux ejecute `bash java/compilar.sh`.
-5. Desde `server-js`, ejecute `npm install` y después `npm start`.
-6. Abra `http://localhost:8080`.
+1. Cree la base de datos con instrucciones manuales:
+
+Consulte `docs/entrega-release.md`.
+
+2. Configure la conexion privada:
+
+Copie `server-js/database.config.example.js` como `server-js/database.local.js` y ajuste usuario, contrasena, base y puerto.
+
+3. Compile e inicie todo manualmente:
+
+```powershell
+cd "C:\Users\Antonio Garcia\Desktop\dany\ProyectoVehiculos\java"
+javac -encoding UTF-8 -d out Cliente.java Vehiculo.java GeneradorActa.java
+
+cd "C:\Users\Antonio Garcia\Desktop\dany\ProyectoVehiculos\server-js"
+npm install
+npm start
+```
+
+4. Abra:
+
+```text
+http://localhost:8080
+```
+
+## Funciones
+
+- CRUD completo de clientes.
+- CRUD completo de vehiculos vinculados a vendedor.
+- Bloqueo de edicion/eliminacion para vehiculos vendidos.
+- Catalogo de ofertas activas, excluyendo vendidos.
+- Busqueda avanzada por modelo, marca, linea, color, transmision, cilindros, nacionalidad, precio y fecha.
+- Ordenamiento por precio, modelo y fecha.
+- Registro de venta con validacion de comprador distinto al vendedor.
+- Cancelacion de venta para republicar el vehiculo.
+- Reportes de ofertas activas y vehiculos vendidos.
+- Exportacion CSV e impresion de reportes.
+- Dashboard con ingresos totales, utilidad estimada, clientes, activos y vendidos.
+- Acta formal HTML con datos del vehiculo, vendedor y comprador.
 
 ## Estructura
 
-- `server-js/`: API JavaScript y acceso a MySQL.
-- `java/`: POO básica y generador de actas. No usa Maven.
-- `frontend/`: interfaz HTML/CSS/JS servida por Java.
-- `database/migrations/`: esquema portable para migrar a otra máquina.
-- `database/seeds/`: datos de demostración.
-- `docs/`: documentación y diagramas de la entrega.
-
-## Funciones cubiertas
-
-- CRUD de clientes y vehículos.
-- Vehículo vinculado a quien lo ofrece.
-- Búsqueda por modelo, marca, precio y fecha de publicación.
-- Registro de venta, con comprador, vendedor y fecha.
-- Reporte de ofertas activas y de vehículos vendidos.
-- Acta de compraventa HTML generada por Java e imprimible desde el navegador.
-
-## Seguridad y buenas prácticas
-
-Las consultas MySQL usan parámetros; no se colocan contraseñas en el repositorio. El navegador consulta la API JavaScript y Java se dedica a la generación del acta.
+- `frontend/`: interfaz HTML, CSS y JavaScript.
+- `server-js/`: API Node.js y conexion MySQL.
+- `java/`: clases POO y generador de acta.
+- `database/migrations/`: scripts SQL para crear o actualizar la base.
+- `database/seeds/`: datos demo.
+- `docs/pruebas-manuales.md`: checklist de pruebas para entrega.
+- `docs/guia-visual.md`: recorrido de pantallas y flujos.
+- `docs/entrega-release.md`: instrucciones para ejecutar en otra computadora sin usar `.bat`.
