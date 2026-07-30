@@ -60,3 +60,4 @@ http://localhost:8080
 - `docs/pruebas-manuales.md`: checklist de pruebas para entrega.
 - `docs/guia-visual.md`: recorrido de pantallas y flujos.
 - `docs/entrega-release.md`: instrucciones para ejecutar en otra computadora sin usar `.bat`.
+- `docs/plan-integrador.md`: costos, Gantt, riesgos, precio de venta y evidencias.

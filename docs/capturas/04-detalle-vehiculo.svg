@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+      <defs>
+        <linearGradient id="side" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#111418"/>
+          <stop offset="1" stop-color="#252a30"/>
+        </linearGradient>
+      </defs>
+      <rect width="1280" height="760" fill="#f3f4f1"/>
+      <rect x="0" y="0" width="260" height="760" fill="url(#side)"/>
+      <rect x="24" y="28" width="48" height="48" rx="8" fill="#a51f2b"/>
+      <text x="39" y="60" font-size="18" font-weight="800" fill="#fff">MC</text>
+      <text x="88" y="58" font-size="24" font-weight="800" fill="#fff">MotorCasa</text>
+      <text x="32" y="130" font-size="18" fill="#fff">Tablero</text>
+      <text x="32" y="178" font-size="18" fill="#cfd5d8">Clientes</text>
+      <text x="32" y="226" font-size="18" fill="#cfd5d8">Vehiculos</text>
+      <text x="32" y="274" font-size="18" fill="#cfd5d8">Ventas</text>
+      <text x="32" y="322" font-size="18" fill="#cfd5d8">Reportes</text>
+      <text x="300" y="58" font-size="18" font-weight="800" fill="#a51f2b">AGENCIA DE AUTOS USADOS</text>
+      <text x="300" y="104" font-size="42" font-weight="800" fill="#15171a">Detalle de vehiculo</text>
+      <text x="300" y="134" font-size="20" fill="#687079">Vista completa de cada unidad</text>
+      
+        <rect x="300" y="150" width="900" height="86" rx="10" fill="#ffffff" stroke="#d8ddd7"/>
+        <text x="330" y="182" font-size="24" font-weight="700" fill="#15171a">Datos generales</text>
+        <text x="330" y="212" font-size="18" fill="#687079">Marca, linea, modelo, vendedor y estado</text>
+        
+        <rect x="300" y="258" width="900" height="86" rx="10" fill="#ffffff" stroke="#d8ddd7"/>
+        <text x="330" y="290" font-size="24" font-weight="700" fill="#15171a">Datos tecnicos</text>
+        <text x="330" y="320" font-size="18" fill="#687079">Motor, serie, color, transmision, cilindros y nacionalidad</text>
+        
+        <rect x="300" y="366" width="900" height="86" rx="10" fill="#ffffff" stroke="#d8ddd7"/>
+        <text x="330" y="398" font-size="24" font-weight="700" fill="#15171a">Valores</text>
+        <text x="330" y="428" font-size="18" fill="#687079">Precio de compra, precio de venta, descripcion y observaciones</text>
+        
+    </svg>

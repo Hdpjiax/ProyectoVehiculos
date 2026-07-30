@@ -1,74 +1,158 @@
-# Planeación del proyecto integrador
+# Proyecto integrador
 
-## Nombre y objetivo
+## 1. Nombre y objetivo del proyecto
 
-**Sistema de compra-venta de vehículos usados.** Su objetivo es registrar clientes, vehículos, publicaciones y ventas para que una agencia consulte información confiable, evite ventas duplicadas y genere actas de compraventa.
+**Nombre:** MotorCasa - Sistema de compra-venta de vehiculos usados.
 
-## Diagrama tiempo-esfuerzo
+**Objetivo general:** desarrollar un sistema web para una agencia de autos usados que permita registrar clientes, publicar vehiculos, consultar ofertas activas, registrar ventas, generar actas de compraventa y obtener reportes administrativos.
 
-| Etapa | Actividades | Esfuerzo estimado | Semana |
+**Objetivos especificos:**
+
+- Registrar clientes que pueden ofertar o comprar vehiculos.
+- Registrar vehiculos vinculados a un vendedor.
+- Buscar vehiculos por modelo, marca, precio y fecha de publicacion.
+- Registrar ventas evitando que un vehiculo se venda mas de una vez.
+- Generar actas de compraventa con datos del vehiculo, vendedor y comprador.
+- Generar reportes de ofertas activas y vehiculos vendidos.
+
+## 2. Diagrama tiempo-esfuerzo
+
+Eje X: tiempo estimado en semanas.  
+Eje Y: esfuerzo estimado en horas.
+
+| Etapa | Actividades principales | Semana | Esfuerzo |
 |---|---|---:|---:|
-| Análisis | Requisitos, modelo ER y modelo relacional | 12 h | 1 |
-| Diseño | Clases, interfaz y prototipo | 14 h | 2 |
-| Desarrollo | SQL, API Java y frontend | 30 h | 3-4 |
-| Pruebas y entrega | CRUD, capturas, documentación y presentación | 16 h | 5 |
+| Analisis | Levantamiento de requisitos, revision del problema, entidades, reglas de negocio | 1 | 12 h |
+| Diseno | Modelo entidad-relacion, modelo relacional, clases Java, flujo de pantallas | 2 | 16 h |
+| Desarrollo | Base de datos, API Node.js, frontend, CRUD, ventas y actas | 3-4 | 38 h |
+| Pruebas | Pruebas CRUD, busquedas, reportes, actas y correccion de errores | 5 | 14 h |
+| Entrega | Documentacion, evidencias, capturas, guia de instalacion y release | 5 | 10 h |
 
-## Diagrama de Gantt
+```mermaid
+xychart-beta
+  title "Tiempo vs esfuerzo del proyecto"
+  x-axis ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"]
+  y-axis "Horas de esfuerzo" 0 --> 25
+  bar [12, 16, 20, 18, 24]
+```
+
+## 3. Diagrama de Gantt
+
+Duracion total estimada: **5 semanas**.
 
 ```mermaid
 gantt
-  title Cronograma del sistema de vehículos
+  title Cronograma MotorCasa
   dateFormat  YYYY-MM-DD
   axisFormat %d/%m
-  section Análisis
-  Requisitos y modelos :a1, 2026-08-03, 5d
-  section Diseño
-  Clases e interfaz :a2, after a1, 5d
+  section Analisis
+  Requisitos del sistema          :a1, 2026-08-03, 2d
+  Modelo de datos inicial         :a2, after a1, 3d
+  section Diseno
+  Modelo ER y relacional          :d1, 2026-08-10, 2d
+  Diseno de interfaz y flujos     :d2, after d1, 3d
   section Desarrollo
-  Base de datos y API :a3, after a2, 7d
-  Interfaz JavaScript :a4, after a3, 3d
-  section Pruebas
-  CRUD y documentación :a5, after a4, 5d
+  Base de datos MySQL             :dev1, 2026-08-17, 3d
+  API Node.js                     :dev2, after dev1, 4d
+  Frontend CRUD y catalogo        :dev3, 2026-08-24, 4d
+  Acta Java y reportes            :dev4, after dev3, 3d
+  section Pruebas y entrega
+  Pruebas manuales                :p1, 2026-08-31, 2d
+  Correcciones finales            :p2, after p1, 2d
+  Documentacion y capturas        :p3, after p2, 1d
 ```
 
-## Costos, gastos y precio de venta
+## 4. Determinacion de costos y gastos
 
-| Concepto | Tipo | Monto MXN |
-|---|---|---:|
-| Análisis y documentación | Costo de trabajo | $1,200.00 |
-| Desarrollo Java, HTML, CSS y JavaScript | Costo de trabajo | $3,000.00 |
-| Pruebas y presentación | Costo de trabajo | $800.00 |
-| Internet y energía | Gasto | $300.00 |
-| Material de presentación | Gasto | $200.00 |
-| Riesgos estimados | Gasto contingente | $1,250.00 |
-| **Costo total (CT)** |  | **$5,000.00** |
-| **Gasto total (GT)** |  | **$1,750.00** |
+| Concepto | Clasificacion | Calculo | Monto |
+|---|---|---:|---:|
+| Analisis y documentacion | Costo de trabajo | 12 h x $100 | $1,200.00 |
+| Diseno de base e interfaz | Costo de trabajo | 16 h x $100 | $1,600.00 |
+| Desarrollo backend/frontend | Costo de trabajo | 38 h x $100 | $3,800.00 |
+| Pruebas y correcciones | Costo de trabajo | 14 h x $100 | $1,400.00 |
+| Documentacion y entrega | Costo de trabajo | 10 h x $100 | $1,000.00 |
+| Internet y energia | Gasto operativo | Estimado | $450.00 |
+| Equipo y depreciacion | Gasto operativo | Estimado | $600.00 |
+| Material de entrega | Gasto operativo | Estimado | $300.00 |
+| Contingencia por riesgos | Gasto de riesgo | Ver tabla de riesgos | $2,050.00 |
+| **Costo total (CT)** |  |  | **$9,000.00** |
+| **Gasto total (GT)** |  |  | **$3,400.00** |
 
-Fórmula requerida: `PV = CT + GT + utilidad (25%) + impuestos (16%)`.
+## 5. Calculo del precio de venta
 
-- Subtotal: $5,000.00 + $1,750.00 = $6,750.00
-- Utilidad (25%): $1,687.50
-- Impuestos (16% sobre subtotal + utilidad): $1,350.00
-- **Precio de venta: $9,787.50 MXN**
+Formula solicitada:
 
-## Riesgos y plan de acción
+```text
+PV = CT + GT + utilidad (25%) + impuestos (16%)
+```
 
-| Etapa | Riesgo | Costo integrado | Plan de acción |
-|---|---|---:|---|
-| Análisis | Requisitos incompletos | $150 | Revisar el documento y validar una lista de cumplimiento antes de programar. |
-| Análisis | Cambios tardíos en los datos | $150 | Mantener el modelo relacional y scripts SQL versionados. |
-| Diseño | Interfaz difícil de usar | $150 | Probar formularios con un compañero y ajustar etiquetas/validaciones. |
-| Diseño | Diseño no responsivo | $150 | Validar en 375, 768, 1024 y 1440 píxeles. |
-| Desarrollo | Error de conexión MySQL | $200 | Usar `database.properties.example` y comprobar conexión antes de la demostración. |
-| Desarrollo | Consultas SQL incorrectas | $150 | Ejecutar CRUD con datos de prueba y usar `PreparedStatement`. |
-| Pruebas | Venta duplicada | $150 | Restringir una venta por vehículo y validar estado `PUBLICADO`. |
-| Pruebas | Pérdida de información | $150 | Conservar migraciones, datos de prueba y copia de la base antes de presentar. |
+Calculo:
 
-Total de riesgos integrado en gastos: **$1,250.00 MXN**.
+| Concepto | Monto |
+|---|---:|
+| Costo total (CT) | $9,000.00 |
+| Gasto total (GT) | $3,400.00 |
+| Subtotal CT + GT | $12,400.00 |
+| Utilidad 25% | $3,100.00 |
+| Base antes de impuestos | $15,500.00 |
+| Impuestos 16% | $2,480.00 |
+| **Precio de venta (PV)** | **$17,980.00 MXN** |
 
-## Evidencias pendientes durante la demostración
+## 6. Riesgos del proyecto
 
-1. Captura de alta, edición y eliminación de cliente.
-2. Captura de alta, búsqueda y edición de vehículo.
-3. Captura de registro de venta y acta imprimible.
-4. Captura de ofertas activas y listado de vehículos vendidos.
+Se consideran 8 riesgos, 2 por cada etapa principal. El valor de cada riesgo se integra en el gasto total del proyecto como contingencia.
+
+| Etapa | Riesgo | Impacto | Valor integrado |
+|---|---|---|---:|
+| Analisis | Requisitos incompletos o mal interpretados | Rehacer pantallas o campos | $250.00 |
+| Analisis | Cambios tardios en reglas de venta | Ajustar base de datos y API | $250.00 |
+| Diseno | Modelo relacional incorrecto | Fallas en consultas y reportes | $300.00 |
+| Diseno | Interfaz confusa para el usuario | Mayor tiempo de correccion | $200.00 |
+| Desarrollo | Error de conexion con MySQL | Sistema no inicia en demostracion | $300.00 |
+| Desarrollo | Fallos en registro de venta o acta | Perdida de evidencia de venta | $350.00 |
+| Pruebas | Datos duplicados o inconsistentes | Errores en CRUD y reportes | $200.00 |
+| Entrega | Problemas al ejecutar en otra computadora | Retraso en presentacion | $200.00 |
+| **Total integrado al precio** |  |  | **$2,050.00** |
+
+## 7. Plan de accion para cada riesgo
+
+| Riesgo | Plan de accion |
+|---|---|
+| Requisitos incompletos o mal interpretados | Comparar el sistema contra el documento de requerimientos y mantener checklist de funciones obligatorias. |
+| Cambios tardios en reglas de venta | Usar migraciones SQL versionadas y separar frontend, backend y Java para modificar por partes. |
+| Modelo relacional incorrecto | Revisar llaves primarias, foraneas y restricciones antes de capturar datos reales. |
+| Interfaz confusa para el usuario | Separar el sistema por pestanas: tablero, clientes, vehiculos, ventas y reportes. |
+| Error de conexion con MySQL | Crear `database.local.js`, documentar credenciales y probar conexion antes de la entrega. |
+| Fallos en registro de venta o acta | Registrar primero la venta en MySQL y generar el acta despues; permitir regenerar acta desde reportes. |
+| Datos duplicados o inconsistentes | Usar campos unicos para correo, numero de motor y numero de serie; validar comprador diferente del vendedor. |
+| Problemas al ejecutar en otra computadora | Documentar instalacion manual sin `.bat` en `docs/entrega-release.md`. |
+
+## Capturas de pantalla del sistema
+
+Guarde las capturas reales en la carpeta `docs/capturas/` con los nombres indicados.
+
+| Captura | Archivo sugerido | Que debe mostrar |
+|---|---|---|
+| Tablero principal | `docs/capturas/01-tablero.png` | Metricas, catalogo y filtros principales. |
+| Clientes | `docs/capturas/02-clientes.png` | Formulario, busqueda y lista de clientes. |
+| Vehiculos | `docs/capturas/03-vehiculos.png` | Registro de vehiculo e inventario. |
+| Detalle de vehiculo | `docs/capturas/04-detalle-vehiculo.png` | Modal con todos los datos del vehiculo. |
+| Venta | `docs/capturas/05-venta.png` | Registro de venta con comprador, precio, estatus y lugar. |
+| Acta | `docs/capturas/06-acta.png` | Acta formal generada por Java. |
+| Reportes | `docs/capturas/07-reportes.png` | Ofertas activas y vehiculos vendidos con fecha. |
+
+### Evidencias
+
+![Tablero principal](capturas/01-tablero.png)
+
+![Clientes](capturas/02-clientes.png)
+
+![Vehiculos](capturas/03-vehiculos.png)
+
+![Detalle de vehiculo](capturas/04-detalle-vehiculo.png)
+
+![Venta](capturas/05-venta.png)
+
+![Acta](capturas/06-acta.png)
+
+![Reportes](capturas/07-reportes.png)
