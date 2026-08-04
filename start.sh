@@ -7,21 +7,69 @@ cd "$(dirname "$0")"
 # 1. Dependency checks
 echo "Buscando dependencias del sistema..."
 
+detect_and_install() {
+  local PKG=$1
+  echo "[WARNING] Falta la dependencia: $PKG"
+  read -p "¿Desea intentar instalarla automaticamente? (s/n): " CONFIRM
+  if [[ "$CONFIRM" =~ ^[Ss]$ ]]; then
+    if command -v pacman >/dev/null 2>&1; then
+      if [ "$PKG" = "node" ]; then
+        sudo pacman -S --noconfirm nodejs npm
+      elif [ "$PKG" = "java" ]; then
+        sudo pacman -S --noconfirm jdk17-openjdk
+      elif [ "$PKG" = "mysql" ]; then
+        sudo pacman -S --noconfirm mariadb mariadb-clients
+        sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+        sudo systemctl start mariadb
+      fi
+    elif command -v apt-get >/dev/null 2>&1; then
+      sudo apt-get update
+      if [ "$PKG" = "node" ]; then
+        sudo apt-get install -y nodejs npm
+      elif [ "$PKG" = "java" ]; then
+        sudo apt-get install -y default-jdk
+      elif [ "$PKG" = "mysql" ]; then
+        sudo apt-get install -y mysql-server
+        sudo systemctl start mysql
+      fi
+    elif command -v dnf >/dev/null 2>&1; then
+      if [ "$PKG" = "node" ]; then
+        sudo dnf install -y nodejs npm
+      elif [ "$PKG" = "java" ]; then
+        sudo dnf install -y java-17-openjdk-devel
+      elif [ "$PKG" = "mysql" ]; then
+        sudo dnf install -y mariadb-server
+        sudo systemctl start mariadb
+      fi
+    elif command -v brew >/dev/null 2>&1; then
+      if [ "$PKG" = "node" ]; then
+        brew install node
+      elif [ "$PKG" = "java" ]; then
+        brew install openjdk
+      elif [ "$PKG" = "mysql" ]; then
+        brew install mysql
+        brew services start mysql
+      fi
+    else
+      echo "[ERROR] No se pudo encontrar un gestor de paquetes conocido (pacman, apt, dnf, brew). Por favor instale $PKG manualmente."
+      exit 1
+    fi
+  else
+    echo "[ERROR] Se requiere $PKG para continuar."
+    exit 1
+  fi
+}
+
 if ! command -v node >/dev/null 2>&1; then
-  echo "[ERROR] Node.js no esta instalado."
-  echo "En CachyOS / Arch Linux, puedes instalarlo ejecutando: sudo pacman -S nodejs npm"
-  exit 1
+  detect_and_install "node"
 fi
 
 if ! command -v java >/dev/null 2>&1 || ! command -v javac >/dev/null 2>&1; then
-  echo "[WARNING] JDK no esta completamente instalado. La generacion de actas podria no funcionar."
-  echo "Puedes instalarlo ejecutando: sudo pacman -S jdk17-openjdk"
+  detect_and_install "java"
 fi
 
 if ! command -v mysql >/dev/null 2>&1; then
-  echo "[ERROR] Cliente de MySQL/MariaDB no encontrado."
-  echo "Puedes instalarlo ejecutando: sudo pacman -S mariadb-clients (o mariadb)"
-  exit 1
+  detect_and_install "mysql"
 fi
 
 # Ensure MySQL/MariaDB service is running

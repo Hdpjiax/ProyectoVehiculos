@@ -12,17 +12,50 @@ if errorlevel 1 (
     set "PATH=!PATH!;C:\Program Files\nodejs"
     echo [INFO] Se agrego Node.js al PATH temporal.
   ) else (
-    echo [WARNING] Node.js no esta en el PATH ni en la ruta predeterminada.
+    echo [WARNING] Node.js no esta instalado.
+    set /p "INSTALL_NODE=¿Desea instalar Node.js automaticamente? (S/N): "
+    if /i "!INSTALL_NODE!"=="S" (
+      echo [INFO] Instalando Node.js...
+      where winget >nul 2>nul
+      if !errorlevel! equ 0 (
+        winget install -e --id OpenJS.NodeJS --accept-package-agreements --accept-source-agreements
+      ) else (
+        echo [INFO] winget no disponible. Descargando instalador de Node.js via PowerShell...
+        powershell -NoProfile -Command "echo '[INFO] Descargando...'; Invoke-WebRequest -Uri 'https://nodejs.org/dist/v18.18.2/node-v18.18.2-x64.msi' -OutFile '%TEMP%\node_setup.msi'; echo '[INFO] Instalando silenciosamente...'; Start-Process msiexec.exe -ArgumentList '/i %TEMP%\node_setup.msi /quiet /norestart' -Wait; Remove-Item '%TEMP%\node_setup.msi'"
+      )
+      call :RefreshPath
+    ) else (
+      echo [ERROR] Se requiere Node.js para ejecutar el servidor.
+      pause
+      exit /b 1
+    )
   )
 )
 
 :: --- Java ---
 where java >nul 2>nul
 if errorlevel 1 (
+  set "JAVA_FOUND=0"
   for /d %%d in ("C:\Program Files\Java\jdk-*") do (
     if exist "%%d\bin\java.exe" (
       set "PATH=!PATH!;%%d\bin"
       echo [INFO] Se agrego Java desde %%d al PATH temporal.
+      set "JAVA_FOUND=1"
+    )
+  )
+  if "!JAVA_FOUND!"=="0" (
+    echo [WARNING] Java JDK no esta instalado.
+    set /p "INSTALL_JAVA=¿Desea instalar Java JDK 17 automaticamente? (S/N): "
+    if /i "!INSTALL_JAVA!"=="S" (
+      echo [INFO] Instalando Java JDK 17...
+      where winget >nul 2>nul
+      if !errorlevel! equ 0 (
+        winget install -e --id EclipseAdoptium.Temurin.JDK.17 --accept-package-agreements --accept-source-agreements
+      ) else (
+        echo [INFO] winget no disponible. Descargando JDK via PowerShell...
+        powershell -NoProfile -Command "echo '[INFO] Descargando...'; Invoke-WebRequest -Uri 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8.1%%2B1/OpenJDK17U-jdk_x64_windows_hotspot_17.0.8.1_1.msi' -OutFile '%TEMP%\jdk_setup.msi'; echo '[INFO] Instalando silenciosamente...'; Start-Process msiexec.exe -ArgumentList '/i %TEMP%\jdk_setup.msi /quiet /norestart' -Wait; Remove-Item '%TEMP%\jdk_setup.msi'"
+      )
+      call :RefreshPath
     )
   )
 )
@@ -36,11 +69,39 @@ if errorlevel 1 (
     set "PATH=!PATH!;C:\xampp\mysql\bin"
     echo [INFO] Se agrego MySQL de XAMPP al PATH temporal.
   ) else (
+    set "MYSQL_FOUND=0"
     for /d %%d in ("C:\Program Files\MySQL\MySQL Server *") do (
       if exist "%%d\bin\mysql.exe" (
         set "MYSQL_BIN=%%d\bin\"
         set "PATH=!PATH!;%%d\bin"
         echo [INFO] Se agrego MySQL desde %%d al PATH temporal.
+        set "MYSQL_FOUND=1"
+      )
+    )
+    if "!MYSQL_FOUND!"=="0" (
+      echo [WARNING] MySQL Server no esta instalado.
+      set /p "INSTALL_MYSQL=¿Desea instalar MySQL Server automaticamente con winget? (S/N): "
+      if /i "!INSTALL_MYSQL!"=="S" (
+        echo [INFO] Instalando MySQL Server via winget...
+        where winget >nul 2>nul
+        if !errorlevel! equ 0 (
+          winget install -e --id Oracle.MySQL --accept-package-agreements --accept-source-agreements
+          call :RefreshPath
+          for /d %%d in ("C:\Program Files\MySQL\MySQL Server *") do (
+            if exist "%%d\bin\mysql.exe" (
+              set "MYSQL_BIN=%%d\bin\"
+              set "PATH=!PATH!;%%d\bin"
+            )
+          )
+        ) else (
+          echo [ERROR] winget no esta disponible para instalar MySQL. Por favor descargue e instale MySQL de forma manual desde: https://dev.mysql.com/downloads/installer/
+          pause
+          exit /b 1
+        )
+      ) else (
+        echo [ERROR] Se requiere MySQL para ejecutar este proyecto.
+        pause
+        exit /b 1
       )
     )
   )
@@ -181,3 +242,8 @@ echo [INFO] El sistema estara disponible en http://localhost:8080
 start "" "http://localhost:8080"
 call npm start
 cd ..
+exit /b 0
+
+:RefreshPath
+for /f "delims=" %%p in ('powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')"') do set "PATH=%%p"
+goto :EOF
