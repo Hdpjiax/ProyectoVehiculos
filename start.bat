@@ -164,7 +164,7 @@ echo =========================================================
 echo PREPARANDO CONFIGURACION Y MIGRANDO BASE DE DATOS
 echo =========================================================
 
-:: Ensure server-js/database.local.js exists and is configured
+:: Ensure server-js\database.local.js exists and is configured
 if not exist "server-js\database.local.js" (
   echo [INFO] Creando server-js\database.local.js...
   copy "server-js\database.config.example.js" "server-js\database.local.js" >nul
