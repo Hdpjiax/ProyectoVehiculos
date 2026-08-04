@@ -191,11 +191,11 @@ if "!DB_PASS!"=="" (
 )
 if errorlevel 1 goto MigError
 
-echo [INFO] Ejecutando 001_datos_demo.sql...
+echo [INFO] Ejecutando reset_demo_completo.sql...
 if "!DB_PASS!"=="" (
-  "%MYSQL%" -u root < database\seeds\001_datos_demo.sql
+  "%MYSQL%" -u root < database\seeds\reset_demo_completo.sql
 ) else (
-  "%MYSQL%" -u root -p"!DB_PASS!" < database\seeds\001_datos_demo.sql
+  "%MYSQL%" -u root -p"!DB_PASS!" < database\seeds\reset_demo_completo.sql
 )
 if errorlevel 1 goto MigError
 

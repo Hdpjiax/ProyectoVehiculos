@@ -20,7 +20,7 @@ echo Se solicitara la contrasena de MySQL root.
 if errorlevel 1 exit /b 1
 "%MYSQL%" -u root -p < database\migrations\002_mejoras_sistema.sql
 if errorlevel 1 exit /b 1
-"%MYSQL%" -u root -p < database\seeds\001_datos_demo.sql
+"%MYSQL%" -u root -p < database\seeds\reset_demo_completo.sql
 if errorlevel 1 exit /b 1
 
 echo Base de datos instalada correctamente.

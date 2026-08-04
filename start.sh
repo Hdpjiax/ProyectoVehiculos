@@ -116,11 +116,11 @@ echo "[INFO] Ejecutando 001_crear_base.sql..."
 if [ -z "$DB_PASS" ]; then
   mysql -u root < database/migrations/001_crear_base.sql
   mysql -u root < database/migrations/002_mejoras_sistema.sql
-  mysql -u root < database/seeds/001_datos_demo.sql
+  mysql -u root < database/seeds/reset_demo_completo.sql
 else
   mysql -u root -p"${DB_PASS}" < database/migrations/001_crear_base.sql
   mysql -u root -p"${DB_PASS}" < database/migrations/002_mejoras_sistema.sql
-  mysql -u root -p"${DB_PASS}" < database/seeds/001_datos_demo.sql
+  mysql -u root -p"${DB_PASS}" < database/seeds/reset_demo_completo.sql
 fi
 
 echo "[SUCCESS] Migraciones y datos semilla aplicados correctamente."
