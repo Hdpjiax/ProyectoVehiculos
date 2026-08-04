@@ -282,6 +282,77 @@ def make_model_diagrams():
     </svg>"""
     (CAPTURAS / "08-er-modelo.svg").write_text(er_svg, encoding="utf-8")
     (CAPTURAS / "09-clases.svg").write_text(class_svg, encoding="utf-8")
+    er_actualizado = """<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="840" viewBox="0 0 1400 840">
+      <rect width="1400" height="840" fill="#f6f7f4"/>
+      <text x="54" y="58" font-size="32" font-weight="900" fill="#111418">Modelo Entidad-Relacion actualizado</text>
+      <text x="54" y="88" font-size="18" fill="#66707a">ADDJ MOTORS - clientes, inventario, ventas, abonos e historial</text>
+      <g font-family="Arial">
+        <rect x="56" y="150" width="300" height="300" rx="12" fill="#ffffff" stroke="#111418" stroke-width="2"/>
+        <rect x="56" y="150" width="300" height="54" rx="12" fill="#111418"/>
+        <text x="80" y="185" font-size="22" font-weight="800" fill="#ffffff">CLIENTES</text>
+        <text x="80" y="230" font-size="16" fill="#111418">PK id_cliente</text>
+        <text x="80" y="260" font-size="16" fill="#111418">nombre_completo</text>
+        <text x="80" y="290" font-size="16" fill="#111418">domicilio</text>
+        <text x="80" y="320" font-size="16" fill="#111418">correo_electronico UQ</text>
+        <text x="80" y="350" font-size="16" fill="#111418">telefono</text>
+        <text x="80" y="380" font-size="16" fill="#111418">activo</text>
+        <text x="80" y="410" font-size="16" fill="#111418">creado_en</text>
+
+        <rect x="470" y="115" width="360" height="390" rx="12" fill="#ffffff" stroke="#a51f2b" stroke-width="2"/>
+        <rect x="470" y="115" width="360" height="54" rx="12" fill="#a51f2b"/>
+        <text x="494" y="150" font-size="22" font-weight="800" fill="#ffffff">VEHICULOS</text>
+        <text x="494" y="196" font-size="16" fill="#111418">PK id_vehiculo</text>
+        <text x="494" y="226" font-size="16" fill="#111418">FK id_vendedor -> clientes</text>
+        <text x="494" y="256" font-size="16" fill="#111418">numero_motor UQ, numero_serie UQ</text>
+        <text x="494" y="286" font-size="16" fill="#111418">marca, linea, modelo, color</text>
+        <text x="494" y="316" font-size="16" fill="#111418">precio_compra, precio_venta</text>
+        <text x="494" y="346" font-size="16" fill="#111418">transmision, cilindros</text>
+        <text x="494" y="376" font-size="16" fill="#111418">nacionalidad, descripcion</text>
+        <text x="494" y="406" font-size="16" fill="#111418">url_imagen</text>
+        <text x="494" y="436" font-size="16" fill="#111418">estado: PUBLICADO/APARTADO/VENDIDO</text>
+        <text x="494" y="466" font-size="16" fill="#111418">fecha_publicacion</text>
+
+        <rect x="940" y="125" width="360" height="350" rx="12" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+        <rect x="940" y="125" width="360" height="54" rx="12" fill="#2563eb"/>
+        <text x="964" y="160" font-size="22" font-weight="800" fill="#ffffff">VENTAS</text>
+        <text x="964" y="206" font-size="16" fill="#111418">PK id_venta</text>
+        <text x="964" y="236" font-size="16" fill="#111418">FK id_vehiculo -> vehiculos</text>
+        <text x="964" y="266" font-size="16" fill="#111418">FK id_comprador -> clientes</text>
+        <text x="964" y="296" font-size="16" fill="#111418">folio_venta UQ</text>
+        <text x="964" y="326" font-size="16" fill="#111418">fecha_venta, precio_final</text>
+        <text x="964" y="356" font-size="16" fill="#111418">estatus_pago: PENDIENTE/PAGADO/APARTADO</text>
+        <text x="964" y="386" font-size="16" fill="#111418">estado_venta: ACTIVA/CANCELADA</text>
+        <text x="964" y="416" font-size="16" fill="#111418">ruta_acta</text>
+
+        <rect x="560" y="585" width="340" height="210" rx="12" fill="#ffffff" stroke="#1e7a52" stroke-width="2"/>
+        <rect x="560" y="585" width="340" height="54" rx="12" fill="#1e7a52"/>
+        <text x="584" y="620" font-size="22" font-weight="800" fill="#ffffff">ABONOS_VENTA</text>
+        <text x="584" y="666" font-size="16" fill="#111418">PK id_abono</text>
+        <text x="584" y="696" font-size="16" fill="#111418">FK id_venta -> ventas</text>
+        <text x="584" y="726" font-size="16" fill="#111418">fecha_abono, monto</text>
+        <text x="584" y="756" font-size="16" fill="#111418">metodo_pago, referencia_pago</text>
+
+        <rect x="70" y="565" width="340" height="230" rx="12" fill="#ffffff" stroke="#c98d2b" stroke-width="2"/>
+        <rect x="70" y="565" width="340" height="54" rx="12" fill="#c98d2b"/>
+        <text x="94" y="600" font-size="22" font-weight="800" fill="#ffffff">HISTORIAL_ESTADOS</text>
+        <text x="94" y="646" font-size="16" fill="#111418">PK id_historial</text>
+        <text x="94" y="676" font-size="16" fill="#111418">entidad, id_entidad</text>
+        <text x="94" y="706" font-size="16" fill="#111418">estado_anterior, estado_nuevo</text>
+        <text x="94" y="736" font-size="16" fill="#111418">motivo, creado_en</text>
+
+        <line x1="356" y1="270" x2="470" y2="270" stroke="#111418" stroke-width="3"/>
+        <text x="382" y="252" font-size="15" fill="#111418">1 vendedor / 0..* vehiculos</text>
+        <line x1="830" y1="286" x2="940" y2="286" stroke="#111418" stroke-width="3"/>
+        <text x="850" y="268" font-size="15" fill="#111418">1 vehiculo / 0..* ventas</text>
+        <path d="M206 450 C320 535 820 535 1070 475" fill="none" stroke="#111418" stroke-width="3"/>
+        <text x="500" y="548" font-size="15" fill="#111418">1 comprador / 0..* ventas</text>
+        <line x1="1080" y1="475" x2="820" y2="585" stroke="#111418" stroke-width="3"/>
+        <text x="880" y="548" font-size="15" fill="#111418">1 venta / 0..* abonos</text>
+        <path d="M410 690 C480 650 520 645 560 662" fill="none" stroke="#111418" stroke-width="3"/>
+        <text x="424" y="626" font-size="15" fill="#111418">bitacora de cambios</text>
+      </g>
+    </svg>"""
+    (CAPTURAS / "08-er-modelo.svg").write_text(er_actualizado, encoding="utf-8")
 
 
 def p(text="", style=None):
@@ -293,18 +364,31 @@ def heading(text, level=1):
     return p(text, f"Heading{level}")
 
 
-def table(headers, rows):
+def table(headers, rows, widths=None):
+    total = 9360
+    if widths is None:
+        widths = [total // len(headers)] * len(headers)
+        widths[-1] += total - sum(widths)
+    else:
+        scale = total / sum(widths)
+        widths = [int(w * scale) for w in widths]
+        widths[-1] += total - sum(widths)
+
     def cell(text, bold=False):
         b = "<w:b/>" if bold else ""
         color = "<w:color w:val=\"FFFFFF\"/>" if bold else ""
         fill = "111418" if bold else "FFFFFF"
-        return f"<w:tc><w:tcPr><w:tcW w:w=\"2400\" w:type=\"dxa\"/><w:shd w:fill=\"{fill}\"/><w:tcMar><w:top w:w=\"120\" w:type=\"dxa\"/><w:left w:w=\"140\" w:type=\"dxa\"/><w:bottom w:w=\"120\" w:type=\"dxa\"/><w:right w:w=\"140\" w:type=\"dxa\"/></w:tcMar></w:tcPr><w:p><w:pPr><w:spacing w:after=\"40\"/></w:pPr><w:r><w:rPr>{b}{color}<w:sz w:val=\"19\"/></w:rPr><w:t>{escape(str(text))}</w:t></w:r></w:p></w:tc>"
+        width = widths[cell.index]
+        cell.index += 1
+        return f"<w:tc><w:tcPr><w:tcW w:w=\"{width}\" w:type=\"dxa\"/><w:shd w:fill=\"{fill}\"/><w:vAlign w:val=\"center\"/><w:tcMar><w:top w:w=\"130\" w:type=\"dxa\"/><w:left w:w=\"150\" w:type=\"dxa\"/><w:bottom w:w=\"130\" w:type=\"dxa\"/><w:right w:w=\"150\" w:type=\"dxa\"/></w:tcMar></w:tcPr><w:p><w:pPr><w:spacing w:after=\"40\" w:line=\"290\" w:lineRule=\"auto\"/></w:pPr><w:r><w:rPr>{b}{color}<w:sz w:val=\"19\"/></w:rPr><w:t>{escape(str(text))}</w:t></w:r></w:p></w:tc>"
     def row_xml(values, header=False, shaded=False):
+        cell.index = 0
         cells = "".join(cell(v, header) for v in values)
         if shaded and not header:
             cells = cells.replace('w:fill="FFFFFF"', 'w:fill="F5F7F8"')
         return "<w:tr>" + cells + "</w:tr>"
-    out = ["<w:tbl><w:tblPr><w:tblW w:w=\"9360\" w:type=\"dxa\"/><w:tblLook w:firstRow=\"1\" w:noHBand=\"0\"/><w:tblBorders><w:top w:val=\"single\" w:sz=\"6\" w:color=\"111418\"/><w:left w:val=\"single\" w:sz=\"4\" w:color=\"BFC5C8\"/><w:bottom w:val=\"single\" w:sz=\"4\" w:color=\"BFC5C8\"/><w:right w:val=\"single\" w:sz=\"4\" w:color=\"BFC5C8\"/><w:insideH w:val=\"single\" w:sz=\"4\" w:color=\"D8DDDE\"/><w:insideV w:val=\"single\" w:sz=\"4\" w:color=\"D8DDDE\"/></w:tblBorders></w:tblPr>"]
+    grid = "".join(f"<w:gridCol w:w=\"{w}\"/>" for w in widths)
+    out = [f"<w:tbl><w:tblPr><w:tblW w:w=\"9360\" w:type=\"dxa\"/><w:tblInd w:w=\"120\" w:type=\"dxa\"/><w:tblLayout w:type=\"fixed\"/><w:tblLook w:firstRow=\"1\" w:noHBand=\"0\"/><w:tblBorders><w:top w:val=\"single\" w:sz=\"6\" w:color=\"111418\"/><w:left w:val=\"single\" w:sz=\"4\" w:color=\"BFC5C8\"/><w:bottom w:val=\"single\" w:sz=\"4\" w:color=\"BFC5C8\"/><w:right w:val=\"single\" w:sz=\"4\" w:color=\"BFC5C8\"/><w:insideH w:val=\"single\" w:sz=\"4\" w:color=\"D8DDDE\"/><w:insideV w:val=\"single\" w:sz=\"4\" w:color=\"D8DDDE\"/></w:tblBorders></w:tblPr><w:tblGrid>{grid}</w:tblGrid>"]
     out.append(row_xml(headers, True))
     for idx, row in enumerate(rows):
         out.append(row_xml(row, shaded=idx % 2 == 1))
@@ -420,61 +504,65 @@ def image(rid, cx=5486400, cy=3254400):
 def make_docx():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     body = []
-    body += [p("ADDJ MOTORS", "Title"), p("Proyecto integrador - Sistema de compra-venta de vehiculos usados", "Subtitle")]
+    body += [p("ADDJ MOTORS", "Title"), p("Proyecto integrador - Sistema integral de compra-venta de vehiculos usados", "Subtitle")]
     body += [heading("Base de datos y Programacion Orientada a Objetos")]
-    body += [p("Esta seccion integra los elementos que se evaluan durante la presentacion: funcionamiento de la aplicacion, interfaz grafica alineada al giro de agencia de autos, validacion del CRUD conectado a MySQL y uso de clases Java para generar el acta de compraventa.")]
+    body += [p("Esta seccion integra los elementos evaluados durante la presentacion: funcionamiento de la aplicacion, interfaz grafica acorde con una agencia automotriz, validacion del CRUD conectado a MySQL, control de ventas y abonos, y uso de clases Java para generar el acta formal de compraventa.")]
     body += [heading("Planteamiento del problema", 2)]
-    body += [p("Una agencia de autos usados necesita centralizar el registro de personas que ofertan o compran vehiculos, publicar los autos disponibles y conservar evidencia formal de cada venta. Sin un sistema, la busqueda de ofertas es lenta, se puede vender dos veces el mismo vehiculo y el acta de compraventa se elabora de forma manual.")]
+    body += [p("Una agencia de autos usados necesita controlar personas, inventario, apartados, ventas, pagos y documentos de compraventa desde un mismo sistema. Cuando estos procesos se llevan en notas, hojas separadas o archivos manuales, aumenta el riesgo de duplicar registros, vender unidades no disponibles, perder abonos o generar actas incompletas. El proyecto resuelve este problema mediante una aplicacion web conectada a MySQL, con reportes, estados operativos y generacion automatica de actas.")]
     body += [heading("Requerimientos funcionales", 2)]
     body += [table(["No.", "Requerimiento"], [
-        ["1", "Registrar, consultar, editar y eliminar clientes."],
-        ["2", "Registrar, consultar, editar y eliminar vehiculos vinculados a un vendedor."],
+        ["1", "Registrar, consultar, editar, desactivar y reactivar clientes."],
+        ["2", "Registrar, consultar, editar y eliminar vehiculos vinculados a un vendedor cuando su estado lo permita."],
         ["3", "Buscar vehiculos por marca, linea, modelo, color, precio, transmision, cilindros, nacionalidad y fecha."],
-        ["4", "Registrar una venta vinculando vehiculo, comprador, vendedor, precio final y estatus de pago."],
-        ["5", "Cambiar el estado del vehiculo a vendido al concluir una venta."],
-        ["6", "Listar ofertas activas de la mas reciente a la mas antigua."],
-        ["7", "Listar vehiculos vendidos con fecha, comprador, vendedor, pago y ruta del acta."],
-        ["8", "Generar, guardar y regenerar un acta imprimible de compraventa mediante Java."],
-    ])]
+        ["4", "Marcar vehiculos como publicados, apartados o vendidos segun el flujo comercial."],
+        ["5", "Registrar una venta vinculando vehiculo, comprador, vendedor, precio final, folio, estatus de pago y estado de venta."],
+        ["6", "Registrar abonos con metodo de pago, referencia y observaciones; calcular saldo pendiente."],
+        ["7", "Cancelar ventas conservando abonos, acta e historial administrativo."],
+        ["8", "Listar ofertas activas y vehiculos vendidos con filtros por fechas, estado, pago y busqueda por comprador o vendedor."],
+        ["9", "Generar, guardar, reimprimir y regenerar un acta formal de compraventa mediante Java."],
+    ], widths=[800, 8560])]
     body += [heading("Requerimientos no funcionales", 2)]
     body += [table(["Categoria", "Requerimiento"], [
         ["Usabilidad", "Interfaz responsiva, organizada por pestanas y adecuada al giro de agencia automotriz."],
         ["Validacion", "Campos obligatorios, precios positivos, comprador distinto del vendedor y bloqueo de vehiculos vendidos."],
-        ["Persistencia", "Base de datos MySQL con llaves primarias, foraneas, restricciones e integridad referencial."],
+        ["Persistencia", "Base de datos MySQL con llaves primarias, foraneas, indices, restricciones e integridad referencial."],
         ["Seguridad", "Consultas parametrizadas desde Node.js para reducir errores de ejecucion SQL."],
         ["Mantenibilidad", "Codigo separado en frontend, backend, SQL y clases Java."],
         ["Portabilidad", "Instrucciones manuales para instalar el sistema en otra computadora sin depender de archivos .bat."],
-    ])]
+    ], widths=[2100, 7260])]
     body += [heading("Modelo Entidad-Relacion", 2)]
     body += [image(1, cx=6400800, cy=3840480)]
-    body += [p("El modelo relaciona clientes con vehiculos publicados y ventas. Un cliente puede ofertar varios vehiculos y tambien puede participar como comprador en varias ventas. Cada vehiculo se vende una sola vez.")]
+    body += [p("El modelo relaciona clientes, vehiculos, ventas, abonos e historial. Un cliente puede ofertar varios vehiculos y tambien puede comprar unidades. Los vehiculos cambian entre PUBLICADO, APARTADO y VENDIDO. Las ventas conservan folio, estado operativo y estatus de pago; los abonos quedan asociados a una venta para mantener evidencia del saldo.")]
     body += [heading("Modelo Relacional", 2)]
-    body += [table(["Tabla", "Campos principales", "Relaciones"], [
-        ["clientes", "id_cliente, nombre_completo, domicilio, correo_electronico, telefono, creado_en", "Llave primaria id_cliente."],
-        ["vehiculos", "id_vehiculo, id_vendedor, numero_motor, numero_serie, modelo, marca, linea, color, precio_compra, precio_venta, estado", "id_vendedor referencia clientes(id_cliente)."],
-        ["ventas", "id_venta, id_vehiculo, id_comprador, fecha_venta, precio_final, estatus_pago, ruta_acta", "id_vehiculo referencia vehiculos; id_comprador referencia clientes."],
-    ])]
+    body += [table(["Tabla", "Campos principales", "Relaciones y reglas"], [
+        ["clientes", "id_cliente, nombre_completo, domicilio, correo_electronico, telefono, activo, creado_en", "PK id_cliente. El correo es unico. El campo activo permite separar clientes activos e inactivos sin perder historial."],
+        ["vehiculos", "id_vehiculo, id_vendedor, numero_motor, numero_serie, modelo, marca, linea, color, precio_compra, precio_venta, transmision, numero_cilindros, nacionalidad, url_imagen, estado", "PK id_vehiculo. FK id_vendedor hacia clientes. Motor y serie son unicos. Estado: PUBLICADO, APARTADO o VENDIDO."],
+        ["ventas", "id_venta, id_vehiculo, id_comprador, folio_venta, fecha_venta, precio_final, estatus_pago, estado_venta, ruta_acta", "PK id_venta. FK id_vehiculo hacia vehiculos. FK id_comprador hacia clientes. Estatus de pago: PENDIENTE, PAGADO o APARTADO. Estado de venta: ACTIVA o CANCELADA."],
+        ["abonos_venta", "id_abono, id_venta, fecha_abono, monto, metodo_pago, referencia_pago, observaciones", "PK id_abono. FK id_venta hacia ventas. Guarda pagos parciales o totales sin borrar historial."],
+        ["historial_estados", "id_historial, entidad, id_entidad, estado_anterior, estado_nuevo, motivo, creado_en", "Bitacora administrativa para cambios de vehiculo, venta o pago."],
+    ], widths=[1700, 3900, 3760])]
     body += [heading("Modelo de Clases", 2)]
     body += [image(2, cx=6400800, cy=3840480)]
-    body += [p("Las clases Cliente y Vehiculo representan los datos principales del dominio. La clase GeneradorActa recibe los datos de una venta desde Node.js y construye el documento formal de compraventa.")]
+    body += [p("Las clases Cliente y Vehiculo representan los datos principales del dominio. La clase GeneradorActa recibe los datos de una venta desde Node.js, convierte el monto a letra, limpia el texto para HTML y construye el acta formal lista para imprimir.")]
     body += [heading("Consultas SQL de LDD", 2)]
     body += [p("El Lenguaje de Definicion de Datos crea la base agencia_autos, sus tablas, llaves primarias, llaves foraneas, restricciones unicas y campos necesarios para ventas y actas.")]
     body += [table(["Objeto", "SQL aplicado", "Proposito"], [
         ["Base de datos", "CREATE DATABASE IF NOT EXISTS agencia_autos;", "Crear el esquema principal del sistema."],
-        ["clientes", "CREATE TABLE clientes (... PRIMARY KEY id_cliente, UNIQUE correo_electronico);", "Guardar compradores y vendedores."],
-        ["vehiculos", "CREATE TABLE vehiculos (... FOREIGN KEY id_vendedor, UNIQUE numero_motor, UNIQUE numero_serie);", "Guardar inventario y ofertas activas."],
-        ["ventas", "CREATE TABLE ventas (... UNIQUE id_vehiculo, FOREIGN KEY id_comprador);", "Registrar operaciones de compraventa sin duplicar vehiculos vendidos."],
-        ["Mejoras", "ALTER TABLE ventas ADD estatus_pago, ADD ruta_acta;", "Agregar control de pago y evidencia del acta."],
-    ])]
+        ["clientes", "CREATE TABLE clientes (... activo TINYINT, UNIQUE correo_electronico);", "Guardar compradores/vendedores y permitir desactivacion sin perder relaciones."],
+        ["vehiculos", "CREATE TABLE vehiculos (... estado ENUM('PUBLICADO','APARTADO','VENDIDO'), url_imagen, FK id_vendedor);", "Controlar inventario, imagenes y disponibilidad comercial."],
+        ["ventas", "CREATE TABLE ventas (... folio_venta, estatus_pago, estado_venta, ruta_acta, FK id_vehiculo, FK id_comprador);", "Registrar compraventas con folio, pago, cancelacion e historial de acta."],
+        ["abonos_venta", "CREATE TABLE abonos_venta (... monto, metodo_pago, referencia_pago, FK id_venta);", "Registrar pagos parciales o totales asociados a ventas."],
+        ["historial_estados", "CREATE TABLE historial_estados (... entidad, estado_anterior, estado_nuevo, motivo);", "Auditar cambios relevantes del sistema."],
+    ], widths=[1700, 5100, 2560])]
     body += [heading("Consultas SQL de LMD utilizadas: CRUD", 2)]
     body += [p("El Lenguaje de Manipulacion de Datos se utiliza desde la aplicacion para crear, consultar, actualizar y eliminar registros, ademas de obtener reportes.")]
     body += [table(["Operacion", "Consulta utilizada", "Uso en el sistema"], [
-        ["CREATE", "INSERT INTO clientes (...) VALUES (...); INSERT INTO vehiculos (...) VALUES (...);", "Alta de clientes y vehiculos."],
-        ["READ", "SELECT v.*, c.nombre_completo AS vendedor FROM vehiculos v JOIN clientes c ... WHERE v.estado = 'PUBLICADO';", "Busqueda del catalogo de ofertas activas."],
-        ["UPDATE", "UPDATE vehiculos SET precio_venta = ?, observaciones = ? WHERE id_vehiculo = ?;", "Edicion de vehiculos y cambios de estado."],
-        ["DELETE", "DELETE FROM vehiculos WHERE id_vehiculo = ?;", "Eliminacion controlada cuando no esta vendido."],
-        ["Reportes", "SELECT ... FROM ventas JOIN vehiculos JOIN clientes ... ORDER BY fecha_venta DESC;", "Listado de vehiculos vendidos."],
-    ])]
+        ["CREATE", "INSERT INTO clientes (...); INSERT INTO vehiculos (...); INSERT INTO ventas (...); INSERT INTO abonos_venta (...);", "Altas de personas, inventario, ventas y pagos."],
+        ["READ", "SELECT v.*, c.nombre_completo AS vendedor FROM vehiculos v JOIN clientes c ... WHERE v.estado IN ('PUBLICADO','APARTADO');", "Busqueda del catalogo de ofertas activas y apartadas."],
+        ["UPDATE", "UPDATE vehiculos SET estado = ?; UPDATE ventas SET estatus_pago = ?, estado_venta = ?;", "Control de apartados, ventas canceladas y pagos."],
+        ["DELETE", "DELETE FROM vehiculos WHERE id_vehiculo = ?; UPDATE clientes SET activo = 0 WHERE id_cliente = ?;", "Eliminacion controlada y baja logica de clientes con relaciones."],
+        ["Reportes", "SELECT ... FROM ventas JOIN vehiculos JOIN clientes LEFT JOIN abonos_venta ... WHERE fecha_venta BETWEEN ...;", "Reportes por fechas, comprador, vendedor, pago y estado de venta."],
+    ], widths=[1500, 5300, 2560])]
     body += [heading("Capturas de pantalla del sistema", 2)]
     body += [p("Las capturas integradas al final del documento muestran tablero, clientes, vehiculos, detalle, venta, acta y reportes.")]
     body += [heading("1. Nombre y objetivo del proyecto")]

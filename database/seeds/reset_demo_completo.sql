@@ -1,4 +1,5 @@
 USE agencia_autos;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE historial_estados;
@@ -34,7 +35,7 @@ INSERT INTO vehiculos (
 (7, 8, 'MPI-KIA-2021-007', '3KPA24AD9ME000007', 2021, 'Kia', 'Rio', 'Blanco', 185000, 239000, 'AUTOMATICA', 4, 'Mexicana', 'Compacto moderno con excelente consumo de combustible.', 'Seguro vigente.', 'https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=900&q=80', 'PUBLICADO'),
 (8, 1, 'HRV-HND-2020-008', '3CZRU6H5XLM000008', 2020, 'Honda', 'HR-V', 'Gris Oxford', 265000, 339000, 'AUTOMATICA', 4, 'Importada', 'SUV compacta, espaciosa y con buen desempeño.', 'Interiores limpios.', 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=900&q=80', 'PUBLICADO'),
 (9, 9, 'REN-CHEV-2023-009', 'KL8CB6SA9NC000009', 2023, 'Chevrolet', 'Aveo', 'Rojo', 190000, 248000, 'ESTANDAR', 4, 'Mexicana', 'Vehículo reciente, económico y con bajo kilometraje.', 'Garantía vigente por agencia.', 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80', 'VENDIDO'),
-(10, 10, 'TGDI-HYU-2022-010', 'KM8K12AA7NU000010', 2022, 'Hyundai', 'Creta', 'Blanco Perla', 285000, 369000, 'AUTOMATICA', 4, 'Importada', 'SUV equipada, cómoda y lista para carretera.', 'Pantalla, cámara de reversa y sensores.', 'https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=900&q=80', 'VENDIDO');
+(10, 10, 'TGDI-HYU-2022-010', 'KM8K12AA7NU000010', 2022, 'Hyundai', 'Creta', 'Blanco Perla', 285000, 369000, 'AUTOMATICA', 4, 'Importada', 'SUV equipada, cómoda y lista para carretera.', 'Pantalla, cámara de reversa y sensores.', 'https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=900&q=80', 'PUBLICADO');
 
 INSERT INTO ventas (id_venta, id_vehiculo, id_comprador, folio_venta, fecha_venta, precio_final, estatus_pago, estado_venta, ruta_acta) VALUES
 (1, 4, 6, 'VTA-00001', '2026-07-20 11:30:00', 224000, 'PAGADO', 'ACTIVA', NULL),
@@ -56,4 +57,5 @@ INSERT INTO historial_estados (entidad, id_entidad, estado_anterior, estado_nuev
 ('VENTA', 2, NULL, 'ACTIVA', 'Registro demo', '2026-07-25 16:15:00'),
 ('VENTA', 3, NULL, 'ACTIVA', 'Registro demo', '2026-07-28 10:20:00'),
 ('VENTA', 4, NULL, 'ACTIVA', 'Registro demo', '2026-07-29 13:45:00'),
-('VENTA', 4, 'ACTIVA', 'CANCELADA', 'Cancelacion demo conservando historial', '2026-07-29 15:00:00');
+('VENTA', 4, 'ACTIVA', 'CANCELADA', 'Cancelacion demo conservando historial', '2026-07-29 15:00:00'),
+('VEHICULO', 10, 'VENDIDO', 'PUBLICADO', 'Venta cancelada; vehiculo regresado al catalogo', '2026-07-29 15:00:00');

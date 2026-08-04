@@ -1,4 +1,5 @@
 USE agencia_autos;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 INSERT IGNORE INTO clientes (nombre_completo, domicilio, correo_electronico, telefono) VALUES
 ('Ana Martínez López', 'Av. Juárez 120, Centro', 'ana.martinez@ejemplo.com', '5551234567'),
 ('Carlos Hernández Ruiz', 'Calle Morelos 45, Centro', 'carlos.hernandez@ejemplo.com', '5557654321'),

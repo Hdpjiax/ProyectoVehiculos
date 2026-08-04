@@ -1,44 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
-      <rect width="1200" height="720" fill="#f6f7f4"/>
-      <text x="48" y="58" font-size="30" font-weight="800" fill="#111418">Modelo Entidad-Relacion</text>
-      <text x="48" y="88" font-size="18" fill="#66707a">Agencia de autos usados ADDJ MOTORS</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="840" viewBox="0 0 1400 840">
+      <rect width="1400" height="840" fill="#f6f7f4"/>
+      <text x="54" y="58" font-size="32" font-weight="900" fill="#111418">Modelo Entidad-Relacion actualizado</text>
+      <text x="54" y="88" font-size="18" fill="#66707a">ADDJ MOTORS - clientes, inventario, ventas, abonos e historial</text>
       <g font-family="Arial">
-        <rect x="70" y="150" width="290" height="310" rx="10" fill="#ffffff" stroke="#111418" stroke-width="2"/>
-        <rect x="70" y="150" width="290" height="54" rx="10" fill="#111418"/>
-        <text x="92" y="185" font-size="22" font-weight="800" fill="#ffffff">CLIENTES</text>
-        <text x="92" y="238" font-size="17" fill="#111418">PK id_cliente</text>
-        <text x="92" y="272" font-size="17" fill="#111418">nombre_completo</text>
-        <text x="92" y="306" font-size="17" fill="#111418">domicilio</text>
-        <text x="92" y="340" font-size="17" fill="#111418">correo_electronico</text>
-        <text x="92" y="374" font-size="17" fill="#111418">telefono</text>
-        <text x="92" y="408" font-size="17" fill="#111418">creado_en</text>
+        <rect x="56" y="150" width="300" height="300" rx="12" fill="#ffffff" stroke="#111418" stroke-width="2"/>
+        <rect x="56" y="150" width="300" height="54" rx="12" fill="#111418"/>
+        <text x="80" y="185" font-size="22" font-weight="800" fill="#ffffff">CLIENTES</text>
+        <text x="80" y="230" font-size="16" fill="#111418">PK id_cliente</text>
+        <text x="80" y="260" font-size="16" fill="#111418">nombre_completo</text>
+        <text x="80" y="290" font-size="16" fill="#111418">domicilio</text>
+        <text x="80" y="320" font-size="16" fill="#111418">correo_electronico UQ</text>
+        <text x="80" y="350" font-size="16" fill="#111418">telefono</text>
+        <text x="80" y="380" font-size="16" fill="#111418">activo</text>
+        <text x="80" y="410" font-size="16" fill="#111418">creado_en</text>
 
-        <rect x="455" y="125" width="330" height="370" rx="10" fill="#ffffff" stroke="#a51f2b" stroke-width="2"/>
-        <rect x="455" y="125" width="330" height="54" rx="10" fill="#a51f2b"/>
-        <text x="477" y="160" font-size="22" font-weight="800" fill="#ffffff">VEHICULOS</text>
-        <text x="477" y="213" font-size="17" fill="#111418">PK id_vehiculo</text>
-        <text x="477" y="247" font-size="17" fill="#111418">FK id_vendedor</text>
-        <text x="477" y="281" font-size="17" fill="#111418">numero_motor, numero_serie</text>
-        <text x="477" y="315" font-size="17" fill="#111418">marca, linea, modelo, color</text>
-        <text x="477" y="349" font-size="17" fill="#111418">precio_compra, precio_venta</text>
-        <text x="477" y="383" font-size="17" fill="#111418">transmision, cilindros</text>
-        <text x="477" y="417" font-size="17" fill="#111418">nacionalidad, estado</text>
-        <text x="477" y="451" font-size="17" fill="#111418">fecha_publicacion</text>
+        <rect x="470" y="115" width="360" height="390" rx="12" fill="#ffffff" stroke="#a51f2b" stroke-width="2"/>
+        <rect x="470" y="115" width="360" height="54" rx="12" fill="#a51f2b"/>
+        <text x="494" y="150" font-size="22" font-weight="800" fill="#ffffff">VEHICULOS</text>
+        <text x="494" y="196" font-size="16" fill="#111418">PK id_vehiculo</text>
+        <text x="494" y="226" font-size="16" fill="#111418">FK id_vendedor -> clientes</text>
+        <text x="494" y="256" font-size="16" fill="#111418">numero_motor UQ, numero_serie UQ</text>
+        <text x="494" y="286" font-size="16" fill="#111418">marca, linea, modelo, color</text>
+        <text x="494" y="316" font-size="16" fill="#111418">precio_compra, precio_venta</text>
+        <text x="494" y="346" font-size="16" fill="#111418">transmision, cilindros</text>
+        <text x="494" y="376" font-size="16" fill="#111418">nacionalidad, descripcion</text>
+        <text x="494" y="406" font-size="16" fill="#111418">url_imagen</text>
+        <text x="494" y="436" font-size="16" fill="#111418">estado: PUBLICADO/APARTADO/VENDIDO</text>
+        <text x="494" y="466" font-size="16" fill="#111418">fecha_publicacion</text>
 
-        <rect x="870" y="170" width="280" height="270" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
-        <rect x="870" y="170" width="280" height="54" rx="10" fill="#2563eb"/>
-        <text x="892" y="205" font-size="22" font-weight="800" fill="#ffffff">VENTAS</text>
-        <text x="892" y="258" font-size="17" fill="#111418">PK id_venta</text>
-        <text x="892" y="292" font-size="17" fill="#111418">FK id_vehiculo</text>
-        <text x="892" y="326" font-size="17" fill="#111418">FK id_comprador</text>
-        <text x="892" y="360" font-size="17" fill="#111418">fecha_venta</text>
-        <text x="892" y="394" font-size="17" fill="#111418">precio_final</text>
+        <rect x="940" y="125" width="360" height="350" rx="12" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+        <rect x="940" y="125" width="360" height="54" rx="12" fill="#2563eb"/>
+        <text x="964" y="160" font-size="22" font-weight="800" fill="#ffffff">VENTAS</text>
+        <text x="964" y="206" font-size="16" fill="#111418">PK id_venta</text>
+        <text x="964" y="236" font-size="16" fill="#111418">FK id_vehiculo -> vehiculos</text>
+        <text x="964" y="266" font-size="16" fill="#111418">FK id_comprador -> clientes</text>
+        <text x="964" y="296" font-size="16" fill="#111418">folio_venta UQ</text>
+        <text x="964" y="326" font-size="16" fill="#111418">fecha_venta, precio_final</text>
+        <text x="964" y="356" font-size="16" fill="#111418">estatus_pago: PENDIENTE/PAGADO/APARTADO</text>
+        <text x="964" y="386" font-size="16" fill="#111418">estado_venta: ACTIVA/CANCELADA</text>
+        <text x="964" y="416" font-size="16" fill="#111418">ruta_acta</text>
 
-        <line x1="360" y1="260" x2="455" y2="260" stroke="#111418" stroke-width="3"/>
-        <text x="378" y="244" font-size="16" fill="#111418">1 oferta 0..*</text>
-        <line x1="785" y1="290" x2="870" y2="290" stroke="#111418" stroke-width="3"/>
-        <text x="797" y="273" font-size="16" fill="#111418">1 venta 0..1</text>
-        <path d="M215 460 C350 610 820 610 1010 440" fill="none" stroke="#111418" stroke-width="3"/>
-        <text x="520" y="610" font-size="16" fill="#111418">cliente compra 0..* ventas</text>
+        <rect x="560" y="585" width="340" height="210" rx="12" fill="#ffffff" stroke="#1e7a52" stroke-width="2"/>
+        <rect x="560" y="585" width="340" height="54" rx="12" fill="#1e7a52"/>
+        <text x="584" y="620" font-size="22" font-weight="800" fill="#ffffff">ABONOS_VENTA</text>
+        <text x="584" y="666" font-size="16" fill="#111418">PK id_abono</text>
+        <text x="584" y="696" font-size="16" fill="#111418">FK id_venta -> ventas</text>
+        <text x="584" y="726" font-size="16" fill="#111418">fecha_abono, monto</text>
+        <text x="584" y="756" font-size="16" fill="#111418">metodo_pago, referencia_pago</text>
+
+        <rect x="70" y="565" width="340" height="230" rx="12" fill="#ffffff" stroke="#c98d2b" stroke-width="2"/>
+        <rect x="70" y="565" width="340" height="54" rx="12" fill="#c98d2b"/>
+        <text x="94" y="600" font-size="22" font-weight="800" fill="#ffffff">HISTORIAL_ESTADOS</text>
+        <text x="94" y="646" font-size="16" fill="#111418">PK id_historial</text>
+        <text x="94" y="676" font-size="16" fill="#111418">entidad, id_entidad</text>
+        <text x="94" y="706" font-size="16" fill="#111418">estado_anterior, estado_nuevo</text>
+        <text x="94" y="736" font-size="16" fill="#111418">motivo, creado_en</text>
+
+        <line x1="356" y1="270" x2="470" y2="270" stroke="#111418" stroke-width="3"/>
+        <text x="382" y="252" font-size="15" fill="#111418">1 vendedor / 0..* vehiculos</text>
+        <line x1="830" y1="286" x2="940" y2="286" stroke="#111418" stroke-width="3"/>
+        <text x="850" y="268" font-size="15" fill="#111418">1 vehiculo / 0..* ventas</text>
+        <path d="M206 450 C320 535 820 535 1070 475" fill="none" stroke="#111418" stroke-width="3"/>
+        <text x="500" y="548" font-size="15" fill="#111418">1 comprador / 0..* ventas</text>
+        <line x1="1080" y1="475" x2="820" y2="585" stroke="#111418" stroke-width="3"/>
+        <text x="880" y="548" font-size="15" fill="#111418">1 venta / 0..* abonos</text>
+        <path d="M410 690 C480 650 520 645 560 662" fill="none" stroke="#111418" stroke-width="3"/>
+        <text x="424" y="626" font-size="15" fill="#111418">bitacora de cambios</text>
       </g>
     </svg>

@@ -1,4 +1,5 @@
 USE agencia_autos;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ALTER DATABASE agencia_autos CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -7,6 +8,21 @@ ALTER TABLE vehiculos CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_c
 ALTER TABLE ventas CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ALTER TABLE vehiculos MODIFY estado ENUM('PUBLICADO','APARTADO','VENDIDO') NOT NULL DEFAULT 'PUBLICADO';
+
+SET @fk_venta_vehiculo := (
+  SELECT CONSTRAINT_NAME
+  FROM information_schema.KEY_COLUMN_USAGE
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'ventas'
+    AND COLUMN_NAME = 'id_vehiculo'
+    AND REFERENCED_TABLE_NAME = 'vehiculos'
+  LIMIT 1
+);
+
+SET @sql := IF(@fk_venta_vehiculo IS NULL, 'SELECT 1', CONCAT('ALTER TABLE ventas DROP FOREIGN KEY ', @fk_venta_vehiculo));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @sql := (
   SELECT COALESCE(
@@ -20,6 +36,37 @@ SET @sql := (
      LIMIT 1),
     'SELECT 1'
   )
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql := (
+  SELECT IF(
+    COUNT(*) = 0,
+    'CREATE INDEX idx_ventas_vehiculo ON ventas(id_vehiculo)',
+    'SELECT 1'
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'ventas'
+    AND INDEX_NAME = 'idx_ventas_vehiculo'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql := (
+  SELECT IF(
+    COUNT(*) = 0,
+    'ALTER TABLE ventas ADD CONSTRAINT fk_venta_vehiculo FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id_vehiculo)',
+    'SELECT 1'
+  )
+  FROM information_schema.KEY_COLUMN_USAGE
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'ventas'
+    AND COLUMN_NAME = 'id_vehiculo'
+    AND REFERENCED_TABLE_NAME = 'vehiculos'
 );
 PREPARE stmt FROM @sql;
 EXECUTE stmt;

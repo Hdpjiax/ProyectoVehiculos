@@ -1,6 +1,7 @@
 CREATE DATABASE IF NOT EXISTS agencia_autos
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE agencia_autos;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS clientes (
   id_cliente INT AUTO_INCREMENT PRIMARY KEY,

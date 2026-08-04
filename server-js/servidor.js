@@ -92,8 +92,17 @@ function normalizarCliente(d) {
 function enviarArchivo(res, archivo) {
   if (!fs.existsSync(archivo)) return responder(res, 404, { error: 'Archivo no encontrado.' });
   const extension = path.extname(archivo);
-  const tipo = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript' }[extension] || 'text/plain';
-  res.writeHead(200, { 'Content-Type': `${tipo}; charset=utf-8` });
+  const tipo = {
+    '.html': 'text/html; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.svg': 'image/svg+xml; charset=utf-8',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.ico': 'image/x-icon'
+  }[extension] || 'text/plain; charset=utf-8';
+  res.writeHead(200, { 'Content-Type': tipo });
   fs.createReadStream(archivo).pipe(res);
 }
 
@@ -437,8 +446,8 @@ async function reportes(req, res, ruta, url) {
       COUNT(*) AS total_vehiculos,
       SUM(estado = 'PUBLICADO') AS vehiculos_activos,
       SUM(estado = 'VENDIDO') AS vehiculos_vendidos,
-      COALESCE((SELECT SUM(precio_final) FROM ventas), 0) AS ingresos_totales,
-      COALESCE((SELECT SUM(ven.precio_final - v.precio_compra) FROM ventas ven JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo), 0) AS utilidad_estimada
+      COALESCE((SELECT SUM(precio_final) FROM ventas WHERE estado_venta = 'ACTIVA'), 0) AS ingresos_totales,
+      COALESCE((SELECT SUM(ven.precio_final - v.precio_compra) FROM ventas ven JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo WHERE ven.estado_venta = 'ACTIVA'), 0) AS utilidad_estimada
       FROM vehiculos`);
     return responder(res, 200, datos);
   }

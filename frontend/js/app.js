@@ -166,14 +166,29 @@ function imprimirReporte(tipo) {
       <p class="subtitulo">ADDJ MOTORS - generado el ${new Date().toLocaleDateString('es-MX')}</p>
       ${contenido}
       <script>
-        window.onload = () => {
+        let impresionIniciada = false;
+        function imprimirCuandoEsteListo() {
+          if (impresionIniciada) return;
+          impresionIniciada = true;
           const imgs = Array.from(document.images);
           const espera = imgs.map(img => img.complete ? Promise.resolve() : new Promise(resolve => {
             img.onload = resolve;
             img.onerror = resolve;
           }));
-          Promise.all(espera).then(() => setTimeout(() => window.print(), 350));
-        };
+          const limite = new Promise(resolve => setTimeout(resolve, 1800));
+          Promise.race([Promise.all(espera), limite]).then(() => {
+            setTimeout(() => {
+              window.focus();
+              window.print();
+            }, 250);
+          });
+        }
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          imprimirCuandoEsteListo();
+        } else {
+          document.addEventListener('DOMContentLoaded', imprimirCuandoEsteListo, { once: true });
+          window.addEventListener('load', imprimirCuandoEsteListo, { once: true });
+        }
       </script>
     </body>
     </html>`);

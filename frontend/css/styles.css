@@ -161,6 +161,23 @@ a {
   align-items: center;
 }
 
+.superior-acciones,
+.acciones {
+  justify-content: flex-end;
+}
+
+.item .acciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(94px, 1fr));
+  align-items: stretch;
+  min-width: 210px;
+}
+
+.item .acciones .enlace,
+.item .acciones .boton {
+  width: 100%;
+}
+
 .vista {
   display: none;
 }
@@ -325,6 +342,9 @@ textarea:focus {
   justify-content: center;
   gap: 8px;
   padding: 9px 14px;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
   border-radius: 6px;
   border: 1px solid var(--borde);
   background: #fff;
@@ -444,6 +464,11 @@ textarea:focus {
   align-items: start;
 }
 
+.item > div:first-child,
+.tabla-fila > div {
+  min-width: 0;
+}
+
 .item p,
 .tarjeta p {
   margin: 4px 0;
@@ -522,9 +547,20 @@ textarea:focus {
 }
 
 .acciones-menu {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.acciones-menu .enlace,
+.acciones-menu .boton {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  line-height: 1.15;
+  white-space: normal;
+  font-size: .82rem;
 }
 
 .empty-state {
@@ -686,6 +722,30 @@ textarea:focus {
   .item,
   .superior-acciones {
     display: grid;
+  }
+
+  .acciones,
+  .acciones-form,
+  .superior-acciones {
+    justify-content: stretch;
+  }
+
+  .acciones .boton,
+  .acciones .enlace,
+  .acciones-form .boton,
+  .acciones-form .enlace,
+  .superior-acciones .boton,
+  .superior-acciones .enlace {
+    width: 100%;
+  }
+
+  .acciones-menu {
+    grid-template-columns: 1fr;
+  }
+
+  .item .acciones {
+    min-width: 0;
+    grid-template-columns: 1fr;
   }
 }
 
