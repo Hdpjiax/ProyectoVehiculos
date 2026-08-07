@@ -6,3 +6,7 @@ node_modules/
 .vscode/
 .env
 server-js/database.local.js
+java/database.properties
+java/lib/*.jar
+java/out/
+actas/

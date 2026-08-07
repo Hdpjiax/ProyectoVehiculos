@@ -1,0 +1,4 @@
+# Copie este archivo como database.properties y ajuste sus datos.
+url=jdbc:mysql://localhost:3306/agencia_autos?useSSL=false&serverTimezone=America/Mexico_City&characterEncoding=UTF-8
+user=root
+password=
