@@ -1,7 +1,6 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -21,67 +20,689 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// Servidor HTTP con JDBC. Java realiza API, SQL, validaciones y actas; JS solo usa fetch e interfaz.
+/*
+ * Servidor sencillo para preparatoria.
+ *
+ * Java atiende las pantallas, se conecta a MySQL con JDBC y genera las actas.
+ * JavaScript solamente usa fetch para pedir los datos y actualizar la interfaz.
+ */
 public class ServidorJava {
-    private static final Path RAIZ = Path.of("").toAbsolutePath().normalize();
+    private static final Path CARPETA_PROYECTO = Path.of("").toAbsolutePath().normalize();
+
     public static void main(String[] args) throws IOException {
-        int puerto = args.length > 0 ? Integer.parseInt(args[0]) : 8080;
-        HttpServer servidor = HttpServer.create(new InetSocketAddress(puerto), 0);
-        servidor.createContext("/", ServidorJava::atender);
+        HttpServer servidor = HttpServer.create(new InetSocketAddress(8080), 0);
+        servidor.createContext("/", ServidorJava::atenderPeticion);
         servidor.setExecutor(null);
         servidor.start();
-        System.out.println("ADDJ MOTORS disponible en http://localhost:" + puerto);
+
+        System.out.println("Sistema disponible en http://localhost:8080");
     }
 
-    private static void atender(HttpExchange e) throws IOException {
+    private static void atenderPeticion(HttpExchange intercambio) throws IOException {
         try {
-            String ruta = e.getRequestURI().getPath();
-            if (ruta.startsWith("/api/")) api(e, ruta);
-            else archivo(e, ruta);
-        } catch (IllegalArgumentException ex) { json(e, 400, Map.of("error", ex.getMessage()));
-        } catch (SQLException ex) { json(e, 500, Map.of("error", "Error de base de datos: " + ex.getMessage()));
-        } catch (Exception ex) { json(e, 500, Map.of("error", ex.getMessage() == null ? "Error interno" : ex.getMessage())); }
+            String ruta = intercambio.getRequestURI().getPath();
+
+            if (ruta.startsWith("/api/")) {
+                atenderApi(intercambio, ruta);
+            } else {
+                enviarArchivo(intercambio, ruta);
+            }
+        } catch (IllegalArgumentException error) {
+            responderError(intercambio, 400, error.getMessage());
+        } catch (SQLException error) {
+            responderError(intercambio, 500, "Error de MySQL: " + error.getMessage());
+        } catch (Exception error) {
+            responderError(intercambio, 500, "Error interno: " + error.getMessage());
+        }
     }
 
-    private static void api(HttpExchange e, String ruta) throws Exception {
-        String metodo = e.getRequestMethod(); Map<String,String> q = parametros(e.getRequestURI());
-        if (ruta.equals("/api/clientes")) {
-            if (metodo.equals("GET")) { String estado=q.getOrDefault("estado","activos"); String condicion=estado.equals("todos")?"1=1":estado.equals("inactivos")?"activo=0":"activo=1"; json(e,200,consulta("SELECT * FROM clientes WHERE "+condicion+" ORDER BY nombre_completo")); return; }
-            if (metodo.equals("POST")) { Map<String,Object>d=cuerpo(e); validarCliente(d); int id=insertar("INSERT INTO clientes(nombre_completo,domicilio,correo_electronico,telefono) VALUES(?,?,?,?)", JsonUtil.cadena(d,"nombreCompleto"),JsonUtil.cadena(d,"domicilio"),JsonUtil.cadena(d,"correoElectronico"),JsonUtil.cadena(d,"telefono")); json(e,201,Map.of("id",id)); return; }
+    private static void atenderApi(HttpExchange intercambio, String ruta) throws Exception {
+        String metodo = intercambio.getRequestMethod();
+
+        // CLIENTES
+        if (ruta.equals("/api/clientes") && metodo.equals("GET")) {
+            listarClientes(intercambio);
+            return;
         }
-        if (ruta.matches("/api/clientes/\\d+")) { int id=idFinal(ruta); if(metodo.equals("PUT")){Map<String,Object>d=cuerpo(e);validarCliente(d); ejecutar("UPDATE clientes SET nombre_completo=?,domicilio=?,correo_electronico=?,telefono=?,activo=1 WHERE id_cliente=?",JsonUtil.cadena(d,"nombreCompleto"),JsonUtil.cadena(d,"domicilio"),JsonUtil.cadena(d,"correoElectronico"),JsonUtil.cadena(d,"telefono"),id);json(e,200,Map.of("id",id));return;} if(metodo.equals("DELETE")){int n=numero("SELECT (SELECT COUNT(*) FROM vehiculos WHERE id_vendedor=?)+(SELECT COUNT(*) FROM ventas WHERE id_comprador=?)",id,id);if(n>0){ejecutar("UPDATE clientes SET activo=0 WHERE id_cliente=?",id);json(e,200,Map.of("mensaje","Cliente desactivado; se conserva su historial."));}else{ejecutar("DELETE FROM clientes WHERE id_cliente=?",id);json(e,200,Map.of("mensaje","Cliente eliminado."));}return;} }
-        if (ruta.matches("/api/clientes/\\d+/reactivar") && metodo.equals("POST")) { ejecutar("UPDATE clientes SET activo=1 WHERE id_cliente=?",idSegmento(ruta,3)); json(e,200,Map.of("mensaje","Cliente reactivado.")); return; }
-
-        if (ruta.equals("/api/vehiculos")) {
-            if(metodo.equals("GET")){json(e,200,vehiculos(q,false));return;}
-            if(metodo.equals("POST")){Map<String,Object>d=cuerpo(e);int id=guardarVehiculo(d,0);json(e,201,Map.of("id",id));return;}
+        if (ruta.equals("/api/clientes") && metodo.equals("POST")) {
+            registrarCliente(intercambio);
+            return;
         }
-        if(ruta.matches("/api/vehiculos/\\d+")){int id=idFinal(ruta);if(metodo.equals("GET")){List<Map<String,Object>>r=consulta("SELECT v.*,c.nombre_completo vendedor FROM vehiculos v JOIN clientes c ON c.id_cliente=v.id_vendedor WHERE id_vehiculo=?",id);if(r.isEmpty())throw new IllegalArgumentException("Vehículo no encontrado.");json(e,200,r.get(0));return;}if(metodo.equals("PUT")){if("VENDIDO".equals(textoUnico("SELECT estado FROM vehiculos WHERE id_vehiculo=?",id)))throw new IllegalArgumentException("No se puede editar un vehículo vendido.");guardarVehiculo(cuerpo(e),id);json(e,200,Map.of("id",id));return;}if(metodo.equals("DELETE")){if("VENDIDO".equals(textoUnico("SELECT estado FROM vehiculos WHERE id_vehiculo=?",id)))throw new IllegalArgumentException("No se puede eliminar un vehículo vendido.");ejecutar("DELETE FROM vehiculos WHERE id_vehiculo=?",id);json(e,200,Map.of("mensaje","Vehículo eliminado."));return;}}
-        if(ruta.matches("/api/vehiculos/\\d+/estado")&&metodo.equals("PUT")){int id=idSegmento(ruta,3);Map<String,Object>d=cuerpo(e);String nuevo=JsonUtil.cadena(d,"estado");if(!nuevo.equals("PUBLICADO")&&!nuevo.equals("APARTADO"))throw new IllegalArgumentException("Estado inválido.");String anterior=textoUnico("SELECT estado FROM vehiculos WHERE id_vehiculo=?",id);if(anterior==null||anterior.equals("VENDIDO"))throw new IllegalArgumentException("No se puede cambiar el estado.");ejecutar("UPDATE vehiculos SET estado=? WHERE id_vehiculo=?",nuevo,id);historial("VEHICULO",id,anterior,nuevo,JsonUtil.cadena(d,"motivo"));json(e,200,Map.of("mensaje","Estado actualizado."));return;}
+        if (ruta.matches("/api/clientes/[0-9]+") && metodo.equals("PUT")) {
+            actualizarCliente(intercambio, idFinal(ruta));
+            return;
+        }
+        if (ruta.matches("/api/clientes/[0-9]+") && metodo.equals("DELETE")) {
+            eliminarCliente(intercambio, idFinal(ruta));
+            return;
+        }
+        if (ruta.matches("/api/clientes/[0-9]+/reactivar") && metodo.equals("POST")) {
+            ejecutar("UPDATE clientes SET activo = 1 WHERE id_cliente = ?", idDelSegmento(ruta, 3));
+            responderJson(intercambio, 200, mensaje("Cliente reactivado."));
+            return;
+        }
 
-        if(ruta.equals("/api/ventas")&&metodo.equals("POST")){json(e,201,registrarVenta(cuerpo(e)));return;}
-        if(ruta.matches("/api/ventas/\\d+/abonos")){int id=idSegmento(ruta,3);if(metodo.equals("GET")){json(e,200,consulta("SELECT * FROM abonos_venta WHERE id_venta=? ORDER BY fecha_abono DESC,id_abono DESC",id));return;}if(metodo.equals("POST")){Map<String,Object>d=cuerpo(e);BigDecimal monto=JsonUtil.decimal(d,"monto");Map<String,Object>v=consulta("SELECT precio_final,estatus_pago,estado_venta,COALESCE((SELECT SUM(monto) FROM abonos_venta WHERE id_venta=ventas.id_venta),0) abonado FROM ventas WHERE id_venta=?",id).get(0);if("CANCELADA".equals(v.get("estado_venta"))||"PAGADO".equals(v.get("estatus_pago")))throw new IllegalArgumentException("No se pueden agregar abonos a esta venta.");BigDecimal total=(BigDecimal)v.get("abonado");BigDecimal precio=(BigDecimal)v.get("precio_final");if(total.add(monto).compareTo(precio)>0)throw new IllegalArgumentException("El abono supera el precio final.");ejecutar("INSERT INTO abonos_venta(id_venta,monto,metodo_pago,referencia_pago,observaciones) VALUES(?,?,?,?,?)",id,monto,valor(d,"metodoPago","EFECTIVO"),JsonUtil.cadena(d,"referenciaPago"),JsonUtil.cadena(d,"observaciones"));if(total.add(monto).compareTo(precio)>=0)ejecutar("UPDATE ventas SET estatus_pago='PAGADO' WHERE id_venta=?",id);json(e,201,Map.of("mensaje","Abono registrado.","saldo",precio.subtract(total.add(monto))));return;}}
-        if(ruta.matches("/api/ventas/\\d+/cancelar")&&metodo.equals("POST")){int id=idSegmento(ruta,3);List<Map<String,Object>>v=consulta("SELECT * FROM ventas WHERE id_venta=?",id);if(v.isEmpty())throw new IllegalArgumentException("Venta no encontrada.");ejecutar("UPDATE ventas SET estado_venta='CANCELADA' WHERE id_venta=?",id);ejecutar("UPDATE vehiculos SET estado='PUBLICADO' WHERE id_vehiculo=?",v.get(0).get("id_vehiculo"));historial("VENTA",id,"ACTIVA","CANCELADA","Cancelación de venta");json(e,200,Map.of("mensaje","Venta cancelada."));return;}
-        if(ruta.matches("/api/ventas/\\d+/estatus")&&metodo.equals("PUT")){int id=idSegmento(ruta,3);Map<String,Object>d=cuerpo(e);String nuevo=JsonUtil.cadena(d,"estatusPago");String anterior=textoUnico("SELECT estatus_pago FROM ventas WHERE id_venta=?",id);ejecutar("UPDATE ventas SET estatus_pago=? WHERE id_venta=?",nuevo,id);historial("PAGO",id,anterior,nuevo,valor(d,"motivo","Cambio manual"));json(e,200,Map.of("mensaje","Estatus actualizado."));return;}
-        if(ruta.matches("/api/ventas/\\d+/acta")&&metodo.equals("POST")){int id=idSegmento(ruta,3);String acta=generarActa(id);json(e,200,Map.of("mensaje","Acta generada.","acta",acta));return;}
+        // VEHICULOS
+        if (ruta.equals("/api/vehiculos") && metodo.equals("GET")) {
+            responderJson(intercambio, 200, buscarVehiculos(parametros(intercambio.getRequestURI()), false));
+            return;
+        }
+        if (ruta.equals("/api/vehiculos") && metodo.equals("POST")) {
+            int id = guardarVehiculo(leerCuerpo(intercambio), 0);
+            responderJson(intercambio, 201, idCreado(id));
+            return;
+        }
+        if (ruta.matches("/api/vehiculos/[0-9]+") && metodo.equals("GET")) {
+            verVehiculo(intercambio, idFinal(ruta));
+            return;
+        }
+        if (ruta.matches("/api/vehiculos/[0-9]+") && metodo.equals("PUT")) {
+            editarVehiculo(intercambio, idFinal(ruta));
+            return;
+        }
+        if (ruta.matches("/api/vehiculos/[0-9]+") && metodo.equals("DELETE")) {
+            eliminarVehiculo(intercambio, idFinal(ruta));
+            return;
+        }
+        if (ruta.matches("/api/vehiculos/[0-9]+/estado") && metodo.equals("PUT")) {
+            cambiarEstadoVehiculo(intercambio, idDelSegmento(ruta, 3));
+            return;
+        }
 
-        if(ruta.equals("/api/reportes/ofertas")&&metodo.equals("GET")){json(e,200,vehiculos(q,true));return;}
-        if(ruta.equals("/api/reportes/vendidos")&&metodo.equals("GET")){json(e,200,consulta("SELECT ven.*,v.*,cv.nombre_completo vendedor,cc.nombre_completo comprador,COALESCE((SELECT SUM(monto) FROM abonos_venta a WHERE a.id_venta=ven.id_venta),0) monto_pagado FROM ventas ven JOIN vehiculos v ON v.id_vehiculo=ven.id_vehiculo JOIN clientes cv ON cv.id_cliente=v.id_vendedor JOIN clientes cc ON cc.id_cliente=ven.id_comprador ORDER BY ven.fecha_venta DESC"));return;}
-        if(ruta.equals("/api/reportes/estadisticas")&&metodo.equals("GET")){json(e,200,consulta("SELECT COUNT(*) total_vehiculos,SUM(estado='PUBLICADO') vehiculos_activos,SUM(estado='VENDIDO') vehiculos_vendidos,COALESCE((SELECT SUM(precio_final) FROM ventas WHERE estado_venta='ACTIVA'),0) ingresos_totales FROM vehiculos").get(0));return;}
-        json(e,404,Map.of("error","Ruta no encontrada."));
+        // VENTAS Y ABONOS
+        if (ruta.equals("/api/ventas") && metodo.equals("POST")) {
+            registrarVenta(intercambio);
+            return;
+        }
+        if (ruta.matches("/api/ventas/[0-9]+/abonos") && metodo.equals("GET")) {
+            listarAbonos(intercambio, idDelSegmento(ruta, 3));
+            return;
+        }
+        if (ruta.matches("/api/ventas/[0-9]+/abonos") && metodo.equals("POST")) {
+            registrarAbono(intercambio, idDelSegmento(ruta, 3));
+            return;
+        }
+        if (ruta.matches("/api/ventas/[0-9]+/cancelar") && metodo.equals("POST")) {
+            cancelarVenta(intercambio, idDelSegmento(ruta, 3));
+            return;
+        }
+        if (ruta.matches("/api/ventas/[0-9]+/estatus") && metodo.equals("PUT")) {
+            cambiarEstatusPago(intercambio, idDelSegmento(ruta, 3));
+            return;
+        }
+        if (ruta.matches("/api/ventas/[0-9]+/acta") && metodo.equals("POST")) {
+            String rutaActa = generarActa(idDelSegmento(ruta, 3));
+            Map<String, Object> respuesta = mensaje("Acta generada.");
+            respuesta.put("acta", rutaActa);
+            responderJson(intercambio, 200, respuesta);
+            return;
+        }
+
+        // REPORTES
+        if (ruta.equals("/api/reportes/ofertas") && metodo.equals("GET")) {
+            responderJson(intercambio, 200, buscarVehiculos(parametros(intercambio.getRequestURI()), true));
+            return;
+        }
+        if (ruta.equals("/api/reportes/vendidos") && metodo.equals("GET")) {
+            responderJson(intercambio, 200, reporteVendidos());
+            return;
+        }
+        if (ruta.equals("/api/reportes/estadisticas") && metodo.equals("GET")) {
+            responderJson(intercambio, 200, estadisticas());
+            return;
+        }
+
+        responderError(intercambio, 404, "Ruta no encontrada.");
     }
 
-    private static List<Map<String,Object>> vehiculos(Map<String,String> q,boolean ofertas) throws SQLException {StringBuilder s=new StringBuilder("SELECT v.*,c.nombre_completo vendedor FROM vehiculos v JOIN clientes c ON c.id_cliente=v.id_vendedor WHERE 1=1");List<Object>p=new ArrayList<>();if(ofertas)s.append(" AND v.estado IN ('PUBLICADO','APARTADO')");filtro(s,p,q,"modelo","v.modelo=?");filtro(s,p,q,"marca","v.marca LIKE ?",true);filtro(s,p,q,"precio","v.precio_venta=?");filtro(s,p,q,"fecha","DATE(v.fecha_publicacion)=?");s.append(" ORDER BY v.fecha_publicacion DESC");return consulta(s.toString(),p.toArray());}
-    private static void filtro(StringBuilder s,List<Object>p,Map<String,String>q,String k,String sql){filtro(s,p,q,k,sql,false);} private static void filtro(StringBuilder s,List<Object>p,Map<String,String>q,String k,String sql,boolean like){if(q.containsKey(k)&&!q.get(k).isBlank()){s.append(" AND ").append(sql);p.add(like?"%"+q.get(k)+"%":q.get(k));}}
-    private static int guardarVehiculo(Map<String,Object>d,int id) throws SQLException {String[]k={"idVendedor","numeroMotor","numeroSerie","modelo","marca","linea","color","precioCompra","precioVenta","transmision","numeroCilindros","nacionalidad","descripcion"};for(String x:k)if(JsonUtil.cadena(d,x).isBlank())throw new IllegalArgumentException("Falta el dato: "+x);Object[]p={JsonUtil.entero(d,"idVendedor"),JsonUtil.cadena(d,"numeroMotor"),JsonUtil.cadena(d,"numeroSerie"),JsonUtil.entero(d,"modelo"),JsonUtil.cadena(d,"marca"),JsonUtil.cadena(d,"linea"),JsonUtil.cadena(d,"color"),JsonUtil.decimal(d,"precioCompra"),JsonUtil.decimal(d,"precioVenta"),JsonUtil.cadena(d,"transmision"),JsonUtil.entero(d,"numeroCilindros"),JsonUtil.cadena(d,"nacionalidad"),JsonUtil.cadena(d,"descripcion"),JsonUtil.cadena(d,"observaciones"),JsonUtil.cadena(d,"urlImagen")};if(id==0)return insertar("INSERT INTO vehiculos(id_vendedor,numero_motor,numero_serie,modelo,marca,linea,color,precio_compra,precio_venta,transmision,numero_cilindros,nacionalidad,descripcion,observaciones,url_imagen) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",p);Object[]u=new Object[p.length+1];System.arraycopy(p,0,u,0,p.length);u[p.length]=id;ejecutar("UPDATE vehiculos SET id_vendedor=?,numero_motor=?,numero_serie=?,modelo=?,marca=?,linea=?,color=?,precio_compra=?,precio_venta=?,transmision=?,numero_cilindros=?,nacionalidad=?,descripcion=?,observaciones=?,url_imagen=? WHERE id_vehiculo=?",u);return id;}
-    private static Map<String,Object> registrarVenta(Map<String,Object>d) throws Exception {int veh=JsonUtil.entero(d,"idVehiculo"),comprador=JsonUtil.entero(d,"idComprador");BigDecimal precio=JsonUtil.decimal(d,"precioFinal");try(Connection c=ConfiguracionBD.abrir()){c.setAutoCommit(false);try{Map<String,Object>v=consulta(c,"SELECT * FROM vehiculos WHERE id_vehiculo=? FOR UPDATE",veh).get(0);if("VENDIDO".equals(v.get("estado")))throw new IllegalArgumentException("Vehículo ya vendido.");if(((Number)v.get("id_vendedor")).intValue()==comprador)throw new IllegalArgumentException("Comprador y vendedor deben ser diferentes.");int id;try(PreparedStatement ps=c.prepareStatement("INSERT INTO ventas(id_vehiculo,id_comprador,precio_final,estatus_pago,estado_venta) VALUES(?,?,?,?, 'ACTIVA')",Statement.RETURN_GENERATED_KEYS)){ps.setInt(1,veh);ps.setInt(2,comprador);ps.setBigDecimal(3,precio);ps.setString(4,valor(d,"estatusPago","PAGADO"));ps.executeUpdate();try(ResultSet rs=ps.getGeneratedKeys()){rs.next();id=rs.getInt(1);}}ejecutar(c,"UPDATE ventas SET folio_venta=? WHERE id_venta=?","VTA-"+String.format("%05d",id),id);ejecutar(c,"UPDATE vehiculos SET estado='VENDIDO' WHERE id_vehiculo=?",veh);historial(c,"VENTA",id,null,"ACTIVA","Registro de venta");c.commit();String acta=generarActa(id);return Map.of("mensaje","Venta registrada.","acta",acta);}catch(Exception x){c.rollback();throw x;}finally{c.setAutoCommit(true);}}}
-    private static String generarActa(int id)throws Exception{Map<String,Object>r=consulta("SELECT ven.*,v.*,cv.nombre_completo vendedor,cv.domicilio domicilio_vendedor,cv.correo_electronico correo_vendedor,cv.telefono telefono_vendedor,cc.nombre_completo comprador,cc.domicilio domicilio_comprador,cc.correo_electronico correo_comprador,cc.telefono telefono_comprador FROM ventas ven JOIN vehiculos v ON v.id_vehiculo=ven.id_vehiculo JOIN clientes cv ON cv.id_cliente=v.id_vendedor JOIN clientes cc ON cc.id_cliente=ven.id_comprador WHERE ven.id_venta=?",id).get(0);String f="acta-venta-"+id+"-"+System.currentTimeMillis()+".html";GeneradorActa.main(new String[]{String.valueOf(r.get("id_vehiculo")),""+r.get("numero_motor"),""+r.get("numero_serie"),""+r.get("modelo"),""+r.get("marca"),""+r.get("linea"),""+r.get("color"),""+r.get("precio_compra"),""+r.get("precio_final"),""+r.get("transmision"),""+r.get("numero_cilindros"),""+r.get("nacionalidad"),""+r.get("descripcion"),""+r.get("observaciones"),""+r.get("vendedor"),""+r.get("domicilio_vendedor"),""+r.get("correo_vendedor"),""+r.get("telefono_vendedor"),""+r.get("comprador"),""+r.get("domicilio_comprador"),""+r.get("correo_comprador"),""+r.get("telefono_comprador"),"Morelia, Michoacán.",LocalDate.now().toString(),f});String ruta="/actas/"+f;ejecutar("UPDATE ventas SET ruta_acta=? WHERE id_venta=?",ruta,id);return ruta;}
-    private static void validarCliente(Map<String,Object>d){for(String k:new String[]{"nombreCompleto","domicilio","correoElectronico","telefono"})if(JsonUtil.cadena(d,k).isBlank())throw new IllegalArgumentException("Falta el dato: "+k);}
-    private static String valor(Map<String,Object>d,String k,String def){String v=JsonUtil.cadena(d,k);return v.isBlank()?def:v;}
-    private static void historial(String e,int id,String a,String n,String m)throws SQLException{try(Connection c=ConfiguracionBD.abrir()){historial(c,e,id,a,n,m);}} private static void historial(Connection c,String e,int id,String a,String n,String m)throws SQLException{ejecutar(c,"INSERT INTO historial_estados(entidad,id_entidad,estado_anterior,estado_nuevo,motivo) VALUES(?,?,?,?,?)",e,id,a,n,m);}
-    private static List<Map<String,Object>> consulta(String s,Object...p)throws SQLException{try(Connection c=ConfiguracionBD.abrir()){return consulta(c,s,p);}} private static List<Map<String,Object>> consulta(Connection c,String s,Object...p)throws SQLException{try(PreparedStatement ps=c.prepareStatement(s)){for(int i=0;i<p.length;i++)ps.setObject(i+1,p[i]);try(ResultSet rs=ps.executeQuery()){List<Map<String,Object>>l=new ArrayList<>();ResultSetMetaData md=rs.getMetaData();while(rs.next()){Map<String,Object>m=new LinkedHashMap<>();for(int i=1;i<=md.getColumnCount();i++)m.put(md.getColumnLabel(i),rs.getObject(i));l.add(m);}return l;}}}
-    private static void ejecutar(String s,Object...p)throws SQLException{try(Connection c=ConfiguracionBD.abrir()){ejecutar(c,s,p);}}private static void ejecutar(Connection c,String s,Object...p)throws SQLException{try(PreparedStatement ps=c.prepareStatement(s)){for(int i=0;i<p.length;i++)ps.setObject(i+1,p[i]);ps.executeUpdate();}}private static int insertar(String s,Object...p)throws SQLException{try(Connection c=ConfiguracionBD.abrir();PreparedStatement ps=c.prepareStatement(s,Statement.RETURN_GENERATED_KEYS)){for(int i=0;i<p.length;i++)ps.setObject(i+1,p[i]);ps.executeUpdate();try(ResultSet rs=ps.getGeneratedKeys()){rs.next();return rs.getInt(1);}}}private static int numero(String s,Object...p)throws SQLException{return ((Number)consulta(s,p).get(0).values().iterator().next()).intValue();}private static String textoUnico(String s,Object...p)throws SQLException{List<Map<String,Object>>r=consulta(s,p);return r.isEmpty()?null:String.valueOf(r.get(0).values().iterator().next());}
-    private static Map<String,Object> cuerpo(HttpExchange e)throws IOException{return JsonUtil.objeto(new String(e.getRequestBody().readAllBytes(),StandardCharsets.UTF_8));}private static int idFinal(String r){return Integer.parseInt(r.substring(r.lastIndexOf('/')+1));}private static int idSegmento(String r,int n){return Integer.parseInt(r.split("/")[n]);}private static Map<String,String> parametros(URI u){Map<String,String>m=new LinkedHashMap<>();String q=u.getRawQuery();if(q==null)return m;for(String x:q.split("&")){String[]p=x.split("=",2);m.put(URLDecoder.decode(p[0],StandardCharsets.UTF_8),p.length>1?URLDecoder.decode(p[1],StandardCharsets.UTF_8):"");}return m;}
-    private static void json(HttpExchange e,int s,Object d)throws IOException{byte[]b=JsonUtil.texto(d).getBytes(StandardCharsets.UTF_8);e.getResponseHeaders().set("Content-Type","application/json; charset=utf-8");e.sendResponseHeaders(s,b.length);e.getResponseBody().write(b);e.close();}
-    private static void archivo(HttpExchange e,String ruta)throws IOException{if(ruta.equals("/"))ruta="/frontend/index.html";else if(!ruta.startsWith("/frontend/")&&!ruta.startsWith("/actas/"))ruta="/frontend"+ruta;Path f=RAIZ.resolve(ruta.substring(1)).normalize();if(!f.startsWith(RAIZ)||!Files.exists(f)){json(e,404,Map.of("error","Archivo no encontrado."));return;}String tipo=ruta.endsWith(".html")?"text/html":ruta.endsWith(".css")?"text/css":ruta.endsWith(".js")?"application/javascript":ruta.endsWith(".svg")?"image/svg+xml":"application/octet-stream";byte[]b=Files.readAllBytes(f);e.getResponseHeaders().set("Content-Type",tipo+"; charset=utf-8");e.sendResponseHeaders(200,b.length);e.getResponseBody().write(b);e.close();}
+    // -------------------- CLIENTES --------------------
+
+    private static void listarClientes(HttpExchange intercambio) throws Exception {
+        String estado = parametros(intercambio.getRequestURI()).getOrDefault("estado", "activos");
+        String condicion = "activo = 1";
+
+        if (estado.equals("inactivos")) {
+            condicion = "activo = 0";
+        }
+        if (estado.equals("todos")) {
+            condicion = "1 = 1";
+        }
+
+        responderJson(intercambio, 200,
+                consultar("SELECT * FROM clientes WHERE " + condicion + " ORDER BY nombre_completo"));
+    }
+
+    private static void registrarCliente(HttpExchange intercambio) throws Exception {
+        String cuerpo = leerCuerpo(intercambio);
+        validarCliente(cuerpo);
+
+        int id = insertar(
+                "INSERT INTO clientes(nombre_completo, domicilio, correo_electronico, telefono) VALUES(?, ?, ?, ?)",
+                JsonUtil.obtenerTexto(cuerpo, "nombreCompleto"),
+                JsonUtil.obtenerTexto(cuerpo, "domicilio"),
+                JsonUtil.obtenerTexto(cuerpo, "correoElectronico"),
+                JsonUtil.obtenerTexto(cuerpo, "telefono")
+        );
+
+        responderJson(intercambio, 201, idCreado(id));
+    }
+
+    private static void actualizarCliente(HttpExchange intercambio, int id) throws Exception {
+        String cuerpo = leerCuerpo(intercambio);
+        validarCliente(cuerpo);
+
+        ejecutar("UPDATE clientes SET nombre_completo = ?, domicilio = ?, correo_electronico = ?, telefono = ?, activo = 1 WHERE id_cliente = ?",
+                JsonUtil.obtenerTexto(cuerpo, "nombreCompleto"),
+                JsonUtil.obtenerTexto(cuerpo, "domicilio"),
+                JsonUtil.obtenerTexto(cuerpo, "correoElectronico"),
+                JsonUtil.obtenerTexto(cuerpo, "telefono"),
+                id);
+
+        responderJson(intercambio, 200, idCreado(id));
+    }
+
+    private static void eliminarCliente(HttpExchange intercambio, int id) throws Exception {
+        int relacionados = contar("SELECT COUNT(*) FROM vehiculos WHERE id_vendedor = ?", id)
+                + contar("SELECT COUNT(*) FROM ventas WHERE id_comprador = ?", id);
+
+        if (relacionados > 0) {
+            ejecutar("UPDATE clientes SET activo = 0 WHERE id_cliente = ?", id);
+            responderJson(intercambio, 200, mensaje("Cliente desactivado; se conserva su historial."));
+        } else {
+            ejecutar("DELETE FROM clientes WHERE id_cliente = ?", id);
+            responderJson(intercambio, 200, mensaje("Cliente eliminado."));
+        }
+    }
+
+    // -------------------- VEHICULOS --------------------
+
+    private static List<Object> buscarVehiculos(Map<String, String> filtros, boolean soloOfertas) throws Exception {
+        StringBuilder sql = new StringBuilder(
+                "SELECT v.*, c.nombre_completo AS vendedor "
+                        + "FROM vehiculos v JOIN clientes c ON c.id_cliente = v.id_vendedor WHERE 1 = 1");
+        List<Object> valores = new ArrayList<>();
+
+        if (soloOfertas) {
+            sql.append(" AND v.estado IN ('PUBLICADO', 'APARTADO')");
+        }
+        agregarFiltro(sql, valores, filtros, "modelo", "v.modelo = ?", false);
+        agregarFiltro(sql, valores, filtros, "marca", "v.marca LIKE ?", true);
+        agregarFiltro(sql, valores, filtros, "precio", "v.precio_venta = ?", false);
+        agregarFiltro(sql, valores, filtros, "fecha", "DATE(v.fecha_publicacion) = ?", false);
+        sql.append(" ORDER BY v.fecha_publicacion DESC");
+
+        return consultar(sql.toString(), valores.toArray());
+    }
+
+    private static void agregarFiltro(StringBuilder sql, List<Object> valores, Map<String, String> filtros,
+                                      String nombre, String condicion, boolean contiene) {
+        String valor = filtros.get(nombre);
+        if (valor != null && !valor.isBlank()) {
+            sql.append(" AND ").append(condicion);
+            valores.add(contiene ? "%" + valor + "%" : valor);
+        }
+    }
+
+    private static void verVehiculo(HttpExchange intercambio, int id) throws Exception {
+        List<Object> resultados = consultar(
+                "SELECT v.*, c.nombre_completo AS vendedor FROM vehiculos v "
+                        + "JOIN clientes c ON c.id_cliente = v.id_vendedor WHERE v.id_vehiculo = ?", id);
+
+        if (resultados.isEmpty()) {
+            throw new IllegalArgumentException("Vehículo no encontrado.");
+        }
+
+        responderJson(intercambio, 200, resultados.get(0));
+    }
+
+    private static void editarVehiculo(HttpExchange intercambio, int id) throws Exception {
+        String estado = obtenerTextoUnico("SELECT estado FROM vehiculos WHERE id_vehiculo = ?", id);
+        if (estado == null || estado.equals("VENDIDO")) {
+            throw new IllegalArgumentException("No se puede editar un vehículo vendido o inexistente.");
+        }
+
+        guardarVehiculo(leerCuerpo(intercambio), id);
+        responderJson(intercambio, 200, idCreado(id));
+    }
+
+    private static void eliminarVehiculo(HttpExchange intercambio, int id) throws Exception {
+        String estado = obtenerTextoUnico("SELECT estado FROM vehiculos WHERE id_vehiculo = ?", id);
+        if ("VENDIDO".equals(estado)) {
+            throw new IllegalArgumentException("No se puede eliminar un vehículo vendido.");
+        }
+
+        ejecutar("DELETE FROM vehiculos WHERE id_vehiculo = ?", id);
+        responderJson(intercambio, 200, mensaje("Vehículo eliminado."));
+    }
+
+    private static void cambiarEstadoVehiculo(HttpExchange intercambio, int id) throws Exception {
+        String cuerpo = leerCuerpo(intercambio);
+        String nuevoEstado = JsonUtil.obtenerTexto(cuerpo, "estado");
+        String estadoAnterior = obtenerTextoUnico("SELECT estado FROM vehiculos WHERE id_vehiculo = ?", id);
+
+        if (!nuevoEstado.equals("PUBLICADO") && !nuevoEstado.equals("APARTADO")) {
+            throw new IllegalArgumentException("Estado inválido.");
+        }
+        if (estadoAnterior == null || estadoAnterior.equals("VENDIDO")) {
+            throw new IllegalArgumentException("No se puede cambiar el estado de este vehículo.");
+        }
+
+        ejecutar("UPDATE vehiculos SET estado = ? WHERE id_vehiculo = ?", nuevoEstado, id);
+        guardarHistorial("VEHICULO", id, estadoAnterior, nuevoEstado, JsonUtil.obtenerTexto(cuerpo, "motivo"));
+        responderJson(intercambio, 200, mensaje("Estado actualizado."));
+    }
+
+    private static int guardarVehiculo(String cuerpo, int id) throws Exception {
+        validarVehiculo(cuerpo);
+
+        Object[] datos = {
+                JsonUtil.obtenerEntero(cuerpo, "idVendedor"),
+                JsonUtil.obtenerTexto(cuerpo, "numeroMotor"),
+                JsonUtil.obtenerTexto(cuerpo, "numeroSerie"),
+                JsonUtil.obtenerEntero(cuerpo, "modelo"),
+                JsonUtil.obtenerTexto(cuerpo, "marca"),
+                JsonUtil.obtenerTexto(cuerpo, "linea"),
+                JsonUtil.obtenerTexto(cuerpo, "color"),
+                JsonUtil.obtenerDecimal(cuerpo, "precioCompra"),
+                JsonUtil.obtenerDecimal(cuerpo, "precioVenta"),
+                JsonUtil.obtenerTexto(cuerpo, "transmision"),
+                JsonUtil.obtenerEntero(cuerpo, "numeroCilindros"),
+                JsonUtil.obtenerTexto(cuerpo, "nacionalidad"),
+                JsonUtil.obtenerTexto(cuerpo, "descripcion"),
+                JsonUtil.obtenerTexto(cuerpo, "observaciones"),
+                JsonUtil.obtenerTexto(cuerpo, "urlImagen")
+        };
+
+        if (id == 0) {
+            return insertar("INSERT INTO vehiculos(id_vendedor, numero_motor, numero_serie, modelo, marca, linea, color, "
+                            + "precio_compra, precio_venta, transmision, numero_cilindros, nacionalidad, descripcion, observaciones, url_imagen) "
+                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", datos);
+        }
+
+        Object[] datosActualizados = new Object[16];
+        System.arraycopy(datos, 0, datosActualizados, 0, 15);
+        datosActualizados[15] = id;
+        ejecutar("UPDATE vehiculos SET id_vendedor = ?, numero_motor = ?, numero_serie = ?, modelo = ?, marca = ?, "
+                        + "linea = ?, color = ?, precio_compra = ?, precio_venta = ?, transmision = ?, numero_cilindros = ?, "
+                        + "nacionalidad = ?, descripcion = ?, observaciones = ?, url_imagen = ? WHERE id_vehiculo = ?", datosActualizados);
+        return id;
+    }
+
+    // -------------------- VENTAS Y ABONOS --------------------
+
+    private static void registrarVenta(HttpExchange intercambio) throws Exception {
+        String cuerpo = leerCuerpo(intercambio);
+        int idVehiculo = JsonUtil.obtenerEntero(cuerpo, "idVehiculo");
+        int idComprador = JsonUtil.obtenerEntero(cuerpo, "idComprador");
+        BigDecimal precioFinal = JsonUtil.obtenerDecimal(cuerpo, "precioFinal");
+        String estatusPago = textoOValor(JsonUtil.obtenerTexto(cuerpo, "estatusPago"), "PAGADO");
+
+        try (Connection conexion = ConfiguracionBD.abrir()) {
+            conexion.setAutoCommit(false);
+            try {
+                List<Object> vehiculos = consultar(conexion,
+                        "SELECT id_vendedor, estado FROM vehiculos WHERE id_vehiculo = ? FOR UPDATE", idVehiculo);
+
+                if (vehiculos.isEmpty()) {
+                    throw new IllegalArgumentException("Vehículo no encontrado.");
+                }
+
+                Map<String, Object> vehiculo = (Map<String, Object>) vehiculos.get(0);
+                if ("VENDIDO".equals(vehiculo.get("estado"))) {
+                    throw new IllegalArgumentException("El vehículo ya fue vendido.");
+                }
+                if (((Number) vehiculo.get("id_vendedor")).intValue() == idComprador) {
+                    throw new IllegalArgumentException("El comprador y vendedor deben ser diferentes.");
+                }
+
+                int idVenta = insertar(conexion,
+                        "INSERT INTO ventas(id_vehiculo, id_comprador, precio_final, estatus_pago, estado_venta) VALUES(?, ?, ?, ?, 'ACTIVA')",
+                        idVehiculo, idComprador, precioFinal, estatusPago);
+
+                ejecutar(conexion, "UPDATE ventas SET folio_venta = ? WHERE id_venta = ?",
+                        "VTA-" + String.format("%05d", idVenta), idVenta);
+                ejecutar(conexion, "UPDATE vehiculos SET estado = 'VENDIDO' WHERE id_vehiculo = ?", idVehiculo);
+                guardarHistorial(conexion, "VENTA", idVenta, null, "ACTIVA", "Registro de venta");
+                conexion.commit();
+
+                String acta = generarActa(idVenta);
+                Map<String, Object> respuesta = mensaje("Venta registrada.");
+                respuesta.put("acta", acta);
+                responderJson(intercambio, 201, respuesta);
+            } catch (Exception error) {
+                conexion.rollback();
+                throw error;
+            }
+        }
+    }
+
+    private static void listarAbonos(HttpExchange intercambio, int idVenta) throws Exception {
+        responderJson(intercambio, 200,
+                consultar("SELECT * FROM abonos_venta WHERE id_venta = ? ORDER BY fecha_abono DESC", idVenta));
+    }
+
+    private static void registrarAbono(HttpExchange intercambio, int idVenta) throws Exception {
+        String cuerpo = leerCuerpo(intercambio);
+        BigDecimal monto = JsonUtil.obtenerDecimal(cuerpo, "monto");
+        List<Object> ventas = consultar("SELECT precio_final, estado_venta FROM ventas WHERE id_venta = ?", idVenta);
+
+        if (ventas.isEmpty()) {
+            throw new IllegalArgumentException("Venta no encontrada.");
+        }
+
+        Map<String, Object> venta = (Map<String, Object>) ventas.get(0);
+        if ("CANCELADA".equals(venta.get("estado_venta"))) {
+            throw new IllegalArgumentException("No se pueden registrar abonos a una venta cancelada.");
+        }
+
+        BigDecimal totalAbonado = obtenerDecimalUnico(
+                "SELECT COALESCE(SUM(monto), 0) FROM abonos_venta WHERE id_venta = ?", idVenta);
+        BigDecimal precioFinal = (BigDecimal) venta.get("precio_final");
+
+        if (totalAbonado.add(monto).compareTo(precioFinal) > 0) {
+            throw new IllegalArgumentException("El abono supera el precio final.");
+        }
+
+        ejecutar("INSERT INTO abonos_venta(id_venta, monto, metodo_pago, referencia_pago, observaciones) VALUES(?, ?, ?, ?, ?)",
+                idVenta, monto,
+                textoOValor(JsonUtil.obtenerTexto(cuerpo, "metodoPago"), "EFECTIVO"),
+                JsonUtil.obtenerTexto(cuerpo, "referenciaPago"),
+                JsonUtil.obtenerTexto(cuerpo, "observaciones"));
+
+        if (totalAbonado.add(monto).compareTo(precioFinal) == 0) {
+            ejecutar("UPDATE ventas SET estatus_pago = 'PAGADO' WHERE id_venta = ?", idVenta);
+        }
+
+        responderJson(intercambio, 201, mensaje("Abono registrado."));
+    }
+
+    private static void cancelarVenta(HttpExchange intercambio, int idVenta) throws Exception {
+        List<Object> ventas = consultar("SELECT id_vehiculo FROM ventas WHERE id_venta = ?", idVenta);
+        if (ventas.isEmpty()) {
+            throw new IllegalArgumentException("Venta no encontrada.");
+        }
+
+        Map<String, Object> venta = (Map<String, Object>) ventas.get(0);
+        ejecutar("UPDATE ventas SET estado_venta = 'CANCELADA' WHERE id_venta = ?", idVenta);
+        ejecutar("UPDATE vehiculos SET estado = 'PUBLICADO' WHERE id_vehiculo = ?", venta.get("id_vehiculo"));
+        guardarHistorial("VENTA", idVenta, "ACTIVA", "CANCELADA", "Cancelación de venta");
+        responderJson(intercambio, 200, mensaje("Venta cancelada."));
+    }
+
+    private static void cambiarEstatusPago(HttpExchange intercambio, int idVenta) throws Exception {
+        String cuerpo = leerCuerpo(intercambio);
+        String nuevoEstatus = JsonUtil.obtenerTexto(cuerpo, "estatusPago");
+        String anterior = obtenerTextoUnico("SELECT estatus_pago FROM ventas WHERE id_venta = ?", idVenta);
+
+        ejecutar("UPDATE ventas SET estatus_pago = ? WHERE id_venta = ?", nuevoEstatus, idVenta);
+        guardarHistorial("PAGO", idVenta, anterior, nuevoEstatus, "Cambio manual de pago");
+        responderJson(intercambio, 200, mensaje("Estatus actualizado."));
+    }
+
+    // -------------------- REPORTES Y ACTA --------------------
+
+    private static List<Object> reporteVendidos() throws Exception {
+        return consultar("SELECT ven.*, v.*, cv.nombre_completo AS vendedor, cc.nombre_completo AS comprador, "
+                + "COALESCE((SELECT SUM(a.monto) FROM abonos_venta a WHERE a.id_venta = ven.id_venta), 0) AS monto_pagado "
+                + "FROM ventas ven JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo "
+                + "JOIN clientes cv ON cv.id_cliente = v.id_vendedor "
+                + "JOIN clientes cc ON cc.id_cliente = ven.id_comprador "
+                + "ORDER BY ven.fecha_venta DESC");
+    }
+
+    private static Object estadisticas() throws Exception {
+        List<Object> resultados = consultar("SELECT COUNT(*) AS total_vehiculos, "
+                + "SUM(estado = 'PUBLICADO') AS vehiculos_activos, "
+                + "SUM(estado = 'VENDIDO') AS vehiculos_vendidos, "
+                + "COALESCE((SELECT SUM(precio_final) FROM ventas WHERE estado_venta = 'ACTIVA'), 0) AS ingresos_totales "
+                + "FROM vehiculos");
+        return resultados.get(0);
+    }
+
+    private static String generarActa(int idVenta) throws Exception {
+        List<Object> resultados = consultar("SELECT ven.*, v.*, "
+                + "cv.nombre_completo AS vendedor, cv.domicilio AS domicilio_vendedor, "
+                + "cv.correo_electronico AS correo_vendedor, cv.telefono AS telefono_vendedor, "
+                + "cc.nombre_completo AS comprador, cc.domicilio AS domicilio_comprador, "
+                + "cc.correo_electronico AS correo_comprador, cc.telefono AS telefono_comprador "
+                + "FROM ventas ven JOIN vehiculos v ON v.id_vehiculo = ven.id_vehiculo "
+                + "JOIN clientes cv ON cv.id_cliente = v.id_vendedor "
+                + "JOIN clientes cc ON cc.id_cliente = ven.id_comprador WHERE ven.id_venta = ?", idVenta);
+
+        if (resultados.isEmpty()) {
+            throw new IllegalArgumentException("Venta no encontrada.");
+        }
+
+        Map<String, Object> venta = (Map<String, Object>) resultados.get(0);
+        String nombreArchivo = "acta-venta-" + idVenta + "-" + System.currentTimeMillis() + ".html";
+
+        String[] datos = {
+                valor(venta, "id_vehiculo"), valor(venta, "numero_motor"), valor(venta, "numero_serie"),
+                valor(venta, "modelo"), valor(venta, "marca"), valor(venta, "linea"), valor(venta, "color"),
+                valor(venta, "precio_compra"), valor(venta, "precio_final"), valor(venta, "transmision"),
+                valor(venta, "numero_cilindros"), valor(venta, "nacionalidad"), valor(venta, "descripcion"),
+                valor(venta, "observaciones"), valor(venta, "vendedor"), valor(venta, "domicilio_vendedor"),
+                valor(venta, "correo_vendedor"), valor(venta, "telefono_vendedor"), valor(venta, "comprador"),
+                valor(venta, "domicilio_comprador"), valor(venta, "correo_comprador"), valor(venta, "telefono_comprador"),
+                "Morelia, Michoacán.", LocalDate.now().toString(), nombreArchivo
+        };
+
+        GeneradorActa.main(datos);
+        String rutaActa = "/actas/" + nombreArchivo;
+        ejecutar("UPDATE ventas SET ruta_acta = ? WHERE id_venta = ?", rutaActa, idVenta);
+        return rutaActa;
+    }
+
+    // -------------------- CONEXION A MYSQL --------------------
+
+    private static List<Object> consultar(String sql, Object... valores) throws Exception {
+        try (Connection conexion = ConfiguracionBD.abrir()) {
+            return consultar(conexion, sql, valores);
+        }
+    }
+
+    private static List<Object> consultar(Connection conexion, String sql, Object... valores) throws SQLException {
+        List<Object> filas = new ArrayList<>();
+
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            colocarValores(consulta, valores);
+            try (ResultSet resultado = consulta.executeQuery()) {
+                ResultSetMetaData columnas = resultado.getMetaData();
+
+                while (resultado.next()) {
+                    Map<String, Object> fila = new LinkedHashMap<>();
+                    for (int i = 1; i <= columnas.getColumnCount(); i++) {
+                        fila.put(columnas.getColumnLabel(i), resultado.getObject(i));
+                    }
+                    filas.add(fila);
+                }
+            }
+        }
+
+        return filas;
+    }
+
+    private static void ejecutar(String sql, Object... valores) throws Exception {
+        try (Connection conexion = ConfiguracionBD.abrir()) {
+            ejecutar(conexion, sql, valores);
+        }
+    }
+
+    private static void ejecutar(Connection conexion, String sql, Object... valores) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(sql)) {
+            colocarValores(consulta, valores);
+            consulta.executeUpdate();
+        }
+    }
+
+    private static int insertar(String sql, Object... valores) throws Exception {
+        try (Connection conexion = ConfiguracionBD.abrir()) {
+            return insertar(conexion, sql, valores);
+        }
+    }
+
+    private static int insertar(Connection conexion, String sql, Object... valores) throws SQLException {
+        try (PreparedStatement consulta = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            colocarValores(consulta, valores);
+            consulta.executeUpdate();
+
+            try (ResultSet llaves = consulta.getGeneratedKeys()) {
+                llaves.next();
+                return llaves.getInt(1);
+            }
+        }
+    }
+
+    private static void colocarValores(PreparedStatement consulta, Object... valores) throws SQLException {
+        for (int i = 0; i < valores.length; i++) {
+            consulta.setObject(i + 1, valores[i]);
+        }
+    }
+
+    private static int contar(String sql, Object... valores) throws Exception {
+        Map<String, Object> fila = (Map<String, Object>) consultar(sql, valores).get(0);
+        return ((Number) fila.values().iterator().next()).intValue();
+    }
+
+    private static String obtenerTextoUnico(String sql, Object... valores) throws Exception {
+        List<Object> filas = consultar(sql, valores);
+        if (filas.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> fila = (Map<String, Object>) filas.get(0);
+        Object valor = fila.values().iterator().next();
+        return valor == null ? null : String.valueOf(valor);
+    }
+
+    private static BigDecimal obtenerDecimalUnico(String sql, Object... valores) throws Exception {
+        Map<String, Object> fila = (Map<String, Object>) consultar(sql, valores).get(0);
+        return (BigDecimal) fila.values().iterator().next();
+    }
+
+    private static void guardarHistorial(String entidad, int id, String anterior, String nuevo, String motivo) throws Exception {
+        try (Connection conexion = ConfiguracionBD.abrir()) {
+            guardarHistorial(conexion, entidad, id, anterior, nuevo, motivo);
+        }
+    }
+
+    private static void guardarHistorial(Connection conexion, String entidad, int id, String anterior,
+                                         String nuevo, String motivo) throws SQLException {
+        ejecutar(conexion, "INSERT INTO historial_estados(entidad, id_entidad, estado_anterior, estado_nuevo, motivo) "
+                        + "VALUES(?, ?, ?, ?, ?)", entidad, id, anterior, nuevo, motivo);
+    }
+
+    // -------------------- ARCHIVOS Y RESPUESTAS --------------------
+
+    private static String leerCuerpo(HttpExchange intercambio) throws IOException {
+        return new String(intercambio.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    private static Map<String, String> parametros(URI direccion) {
+        Map<String, String> parametros = new LinkedHashMap<>();
+        String consulta = direccion.getRawQuery();
+
+        if (consulta == null) {
+            return parametros;
+        }
+
+        for (String parte : consulta.split("&")) {
+            String[] dato = parte.split("=", 2);
+            String llave = URLDecoder.decode(dato[0], StandardCharsets.UTF_8);
+            String valor = dato.length > 1 ? URLDecoder.decode(dato[1], StandardCharsets.UTF_8) : "";
+            parametros.put(llave, valor);
+        }
+
+        return parametros;
+    }
+
+    private static void enviarArchivo(HttpExchange intercambio, String ruta) throws IOException {
+        if (ruta.equals("/")) {
+            ruta = "/frontend/index.html";
+        } else if (!ruta.startsWith("/frontend/") && !ruta.startsWith("/actas/")) {
+            ruta = "/frontend" + ruta;
+        }
+
+        Path archivo = CARPETA_PROYECTO.resolve(ruta.substring(1)).normalize();
+        if (!archivo.startsWith(CARPETA_PROYECTO) || !Files.exists(archivo)) {
+            responderError(intercambio, 404, "Archivo no encontrado.");
+            return;
+        }
+
+        String tipo = "application/octet-stream";
+        if (ruta.endsWith(".html")) tipo = "text/html";
+        if (ruta.endsWith(".css")) tipo = "text/css";
+        if (ruta.endsWith(".js")) tipo = "application/javascript";
+        if (ruta.endsWith(".svg")) tipo = "image/svg+xml";
+
+        byte[] contenido = Files.readAllBytes(archivo);
+        intercambio.getResponseHeaders().set("Content-Type", tipo + "; charset=utf-8");
+        intercambio.sendResponseHeaders(200, contenido.length);
+        intercambio.getResponseBody().write(contenido);
+        intercambio.close();
+    }
+
+    private static void responderJson(HttpExchange intercambio, int estado, Object datos) throws IOException {
+        byte[] contenido = JsonUtil.convertir(datos).getBytes(StandardCharsets.UTF_8);
+        intercambio.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+        intercambio.sendResponseHeaders(estado, contenido.length);
+        intercambio.getResponseBody().write(contenido);
+        intercambio.close();
+    }
+
+    private static void responderError(HttpExchange intercambio, int estado, String texto) throws IOException {
+        responderJson(intercambio, estado, Map.of("error", texto));
+    }
+
+    // -------------------- METODOS PEQUEÑOS --------------------
+
+    private static void validarCliente(String cuerpo) {
+        revisarCampo(cuerpo, "nombreCompleto");
+        revisarCampo(cuerpo, "domicilio");
+        revisarCampo(cuerpo, "correoElectronico");
+        revisarCampo(cuerpo, "telefono");
+    }
+
+    private static void validarVehiculo(String cuerpo) {
+        String[] campos = {"idVendedor", "numeroMotor", "numeroSerie", "modelo", "marca", "linea", "color",
+                "precioCompra", "precioVenta", "transmision", "numeroCilindros", "nacionalidad", "descripcion"};
+        for (String campo : campos) {
+            revisarCampo(cuerpo, campo);
+        }
+    }
+
+    private static void revisarCampo(String cuerpo, String campo) {
+        if (JsonUtil.obtenerTexto(cuerpo, campo).isEmpty()) {
+            throw new IllegalArgumentException("Falta el campo: " + campo);
+        }
+    }
+
+    private static Map<String, Object> mensaje(String texto) {
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("mensaje", texto);
+        return respuesta;
+    }
+
+    private static Map<String, Object> idCreado(int id) {
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("id", id);
+        return respuesta;
+    }
+
+    private static int idFinal(String ruta) {
+        return Integer.parseInt(ruta.substring(ruta.lastIndexOf('/') + 1));
+    }
+
+    private static int idDelSegmento(String ruta, int numero) {
+        return Integer.parseInt(ruta.split("/")[numero]);
+    }
+
+    private static String textoOValor(String texto, String valorAlterno) {
+        return texto.isEmpty() ? valorAlterno : texto;
+    }
+
+    private static String valor(Map<String, Object> datos, String campo) {
+        Object valor = datos.get(campo);
+        return valor == null ? "" : String.valueOf(valor);
+    }
 }
